@@ -9,6 +9,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <map>
+
 #include "token.hpp"
 #include "error_handling.hpp"
 
@@ -31,15 +33,18 @@ class Scanner {
         char peek() const;
         inline bool end_of_source() const { return current >= source.length(); }
 
-    void handle_string();
 
-    void handle_number();
+        void handle_string();
+        void handle_number();
+        bool is_digit(char peek);
+        char peek_next() const;
+        bool is_alpha(char c);
 
-    bool is_digit(char peek);
+        static const std::map<std::string, TokenType> keyword_table;
 
-    char peek_next() const;
+    void identifier();
 
-    bool is_letter(char c);
+    bool is_alpha_numeric(char c);
 };
 
 

@@ -4,6 +4,24 @@
 
 #include "scanner.hpp"
 
+const std::map<std::string, TokenType> Scanner::keyword_table = {
+{"and",    AND},
+{"class",  CLASS},
+{"else",   ELSE},
+{"false",  FALSE},
+{"for",    FOR},
+{"fun",    FUN},
+{"if",     IF},
+{"nil",    NIL},
+{"or",     OR},
+{"print",  PRINT},
+{"return", RETURN},
+{"super",  SUPER},
+{"this",   THIS},
+{"true",   TRUE},
+{"var",    VAR},
+{"while",  WHILE}
+};
 
 std::vector<Token> Scanner::scanTokens() {
     while (current < source.length()) {
@@ -101,7 +119,9 @@ void Scanner::scanToken() {
 
 
         default:
-            if (is_letter(c)) {}
+            if (is_alpha(c)) {
+                identifier();
+            }
             errorReporter.error(line, "Unexpected character.");
             break;
     }
@@ -174,7 +194,23 @@ char Scanner::peek_next() const {
     return source[current+1];
 }
 
-bool Scanner::is_letter(char c) {
-    bool ret = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+bool Scanner::is_alpha(char c) {
+    bool ret = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
     return ret;
 }
+
+bool Scanner::is_alpha_numeric(char c) {
+    return is_alpha(c) || is_digit(c);
+}
+
+void Scanner::identifier() {
+    while (is_alpha_numeric(peek())) {current++;}
+
+    std::string id = source.substr(start, current);
+    TokenType type = Scanner::keyword_table.at(id);
+    if
+
+
+
+}
+
