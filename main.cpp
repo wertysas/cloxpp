@@ -24,12 +24,11 @@ void run_prompt(ErrorReporter &errorReporter);
 
 
 int main(int argc, char* argv[]) {
-
     ErrorReporter errorReporter{};
-    if (argc == 1) {
+    if (argc == 2) {
         run_file(argv[1], errorReporter);
         if (errorReporter.has_error) { return 65; }
-    } else if (argc > 0) {
+    } else if (argc > 2) {
         cout << "Usage: cloxpp [script]" << endl;
         return 64;
     } else {
@@ -39,6 +38,7 @@ int main(int argc, char* argv[]) {
 }
 
 void run_prompt(ErrorReporter &errorReporter) {
+    cout << "CloxPP version 0.1 (prealpha relase)" << endl;
     string input_line;
     while (true) {
         getline(cin, input_line);
@@ -67,8 +67,12 @@ void run_file(char *file_path, ErrorReporter &errorReporter) {
 }
 
 void run(string source, ErrorReporter &errorReporter) {
+    cout << "Input Source String:" <<endl;
+    cout << source << endl;
     Scanner scanner(source, errorReporter);
     std::vector<Token> tokens = scanner.scanTokens();
+    cout << tokens.size() << endl;
+    for (Token t: tokens) {cout << "TOKEN\t lexeme: " << t.lexeme << "\t type: " << t.type << endl; }
 }
 
 

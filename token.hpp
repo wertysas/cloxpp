@@ -61,12 +61,13 @@ enum TokenType {
 };
 
 class Token {
-    TokenType type;
-    string lexeme;
     void* literal;
     int line;
     public:
     Token(TokenType type_, string lexeme_, void *literal_, int line_);
+
+    string lexeme;
+    TokenType type;
 };
 
 

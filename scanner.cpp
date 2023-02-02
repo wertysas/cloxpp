@@ -3,6 +3,7 @@
 //
 
 #include "scanner.hpp"
+#include <iostream>
 
 const std::map<std::string, TokenType> Scanner::keyword_table = {
 {"and",    AND},
@@ -28,7 +29,7 @@ std::vector<Token> Scanner::scanTokens() {
         start = current;
         scanToken();
     }
-    return std::vector<Token>();
+    return tokens;
 
 }
 
@@ -122,7 +123,11 @@ void Scanner::scanToken() {
             if (is_alpha(c)) {
                 identifier();
             }
-            errorReporter.error(line, "Unexpected character.");
+            else {
+                string error_string = "Unexpected character: ";
+                error_string += c;
+                errorReporter.error(line, error_string);
+            }
             break;
     }
 }
@@ -136,7 +141,7 @@ void Scanner::addToken(TokenType type) {
 }
 
 void Scanner::addToken(TokenType type, void *literal) {
-    string lexeme = source.substr(start, current);
+    string lexeme = source.substr(start, current-start);
     tokens.emplace_back(type, lexeme, literal, line);
 }
 
@@ -165,7 +170,9 @@ void Scanner::handle_string() {
     }
 
     // TODO: Maybe empty string should be handld differently? Though it is a string now.
-    string value = source.substr(start+1, current++); // We skip the double quotes in the str. repr.
+    string value = source.substr(start+1, current-start-1); // We skip the double quotes in the str. repr.
+    current++;
+    //std::cout << "SUBSTRING: " << value << std::endl;
     addToken(STRING, &value);
 
 }
@@ -175,15 +182,15 @@ void Scanner::handle_number() {
 
     if (peek() == '.' && is_digit(peek_next())) {
         current++; // Add dot sign in representation
-        while (is_digit(peek())) {
-            current++;
-        }
+    }
+    while (is_digit(peek())) {
+        current++;
+    }
         double* d = new double;
-        *d = (stod(source.substr(start, current)));
+        *d = (stod(source.substr(start, current-start)));
         addToken(NUMBER, d);
     }
 
-}
 
 inline bool Scanner::is_digit(char c) {
     return (c >= '0' && c <= '9');
@@ -204,13 +211,24 @@ bool Scanner::is_alpha_numeric(char c) {
 }
 
 void Scanner::identifier() {
-    while (is_alpha_numeric(peek())) {current++;}
+    //std::cout << "-----------------------------------------------" << std::endl;
+    //std::cout << "Scanner::identifier \tcurrent: " << current << "\tsource[current]: " << source[current] << std::endl;
+    while (is_alpha_numeric(peek())) {
+    //    std::cout << "Peek :" << peek() << "\tvalue is alpha numeric" << std::endl;
+        current++;}
+    //std::cout << "start: " << start << "\tcurrent: " << current << std::endl;
+    TokenType type;
+    std::string id = source.substr(start, current-start);
+    //std::cout << "Identifier substring: " << id << std::endl;
+    //std::cout << "-----------------------------------------------" << std::endl;
+    auto it = keyword_table.find(id);
+    if (it != keyword_table.end()) {
+        type = it->second;
+    }
+    else {
+        type = IDENTIFIER;
 
-    std::string id = source.substr(start, current);
-    TokenType type = Scanner::keyword_table.at(id);
-    if
-
-
-
+    }
+    addToken(type);
 }
 
