@@ -6,8 +6,10 @@
 #define CLOXPP_TOKEN_HPP
 
 #include <string>
+#include <map>
 
 using namespace std;
+
 
 enum TokenType {
     // Single char tokens
