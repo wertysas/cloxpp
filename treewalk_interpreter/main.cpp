@@ -72,7 +72,7 @@ void run(string source, ErrorReporter &errorReporter) {
     Scanner scanner(source, errorReporter);
     std::vector<Token> tokens = scanner.scanTokens();
     cout << tokens.size() << endl;
-    for (Token t: tokens) {cout << "TOKEN\t lexeme: " << t.lexeme << "\t type: " << t.type << endl; }
+    for (Token t: tokens) {cout << "TOKEN\t lexeme: " << t.lexeme << "\t type: " << token_table.at(t.type) << endl; }
 }
 
 
