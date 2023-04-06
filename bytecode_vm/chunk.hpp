@@ -6,6 +6,7 @@
 #define CLOXPP_CHUNK_HPP
 
 #include "common.hpp"
+#include "value.hpp"
 #include "dynamic_array.hpp"
 
 
@@ -13,6 +14,12 @@ enum OpCode : uint8_t {
     OP_RETURN
 };
 
-using Chunk = DynamicArray<OpCode>;
+
+struct Chunk {
+    DynamicArray<OpCode> opcodes;
+    DynamicArray<Value> constants;
+};
+
+//using Chunk = DynamicArray<OpCode>;
 
 #endif //CLOXPP_CHUNK_HPP

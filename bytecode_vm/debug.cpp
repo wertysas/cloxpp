@@ -7,14 +7,14 @@
 
 void disassemble_chunk(Chunk& chunk, std::string name) {
     std::cout << "==" << name << "==" << std::endl;
-    for (size_t offset=0; offset<chunk.count(); ) {
+    for (size_t offset=0; offset<chunk.opcodes.count(); ) {
         offset = disassemble_instruction(chunk, offset);
     }
 }
 
 size_t disassemble_instruction(Chunk& chunk, size_t offset) {
     std::cout << offset << " ";
-    OpCode instruction = chunk[offset];
+    OpCode instruction = chunk.opcodes[offset];
     switch(instruction) {
         case OP_RETURN:
             return simple_instruction("OP_RETURN", offset);

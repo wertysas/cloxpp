@@ -10,7 +10,7 @@
 
 int main(int argc, char* argv[]) {
     Chunk chunk{};
-    chunk.append(OP_RETURN);
+    chunk.opcodes.append(OP_RETURN);
     disassemble_chunk(chunk, "test chunk");
     return 0;
 }
