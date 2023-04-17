@@ -11,4 +11,7 @@
 using Value = double;
 using ValueArray = DynamicArray<Value>;
 
+void print_value(Value);
+
+
 #endif //CLOXPP_VALUE_HPP

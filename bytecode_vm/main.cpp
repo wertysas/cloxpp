@@ -10,7 +10,12 @@
 
 int main(int argc, char* argv[]) {
     Chunk chunk{};
-    chunk.opcodes.append(OP_RETURN);
+    chunk.add_opcode(OP_RETURN);
+    double x = 1.0, y;
+    for (int i=1; i< 300; i++) {
+        y = x*i;
+        chunk.add_constant(y);
+    }
     disassemble_chunk(chunk, "test chunk");
     return 0;
 }

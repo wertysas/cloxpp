@@ -8,9 +8,11 @@
 #include <string>
 #include "chunk.hpp"
 
-void disassemble_chunk(Chunk& chunk, std::string name);
-size_t disassemble_instruction(Chunk& chunk, size_t offset);
+void disassemble_chunk(const Chunk &chunk, std::string name);
+size_t disassemble_instruction(const Chunk &chunk, size_t offset);
 size_t simple_instruction(std::string str, size_t offset);
+size_t constant_instruction(const Chunk &chunk, size_t offset);
+size_t constant_instruction_long(const Chunk &chunk, size_t offset);
 
 
 #endif //CLOXPP_DEBUG_HPP

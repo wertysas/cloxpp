@@ -7,6 +7,9 @@
 
 #include <stdint.h> // typedefs for fixed width integer types and macro constants
 #include <cstddef>
+#include <iostream>
+
+using uint = unsigned int;
 
 
 #endif //CLOXPP_COMMON_HPP
