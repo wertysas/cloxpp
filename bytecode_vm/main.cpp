@@ -10,7 +10,7 @@
 
 int main(int argc, char* argv[]) {
     Chunk chunk{};
-    chunk.add_opcode(OP_RETURN);
+    chunk.add_opcode(OP_RETURN, 123);
     double x = 1.0, y;
     for (int i=1; i< 300; i++) {
         y = x*i;

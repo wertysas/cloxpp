@@ -8,6 +8,7 @@
 #include <stdint.h> // typedefs for fixed width integer types and macro constants
 #include <cstddef>
 #include <iostream>
+#include <iomanip>
 
 using uint = unsigned int;
 

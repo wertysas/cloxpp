@@ -5,8 +5,18 @@
 #include "chunk.hpp"
 
 
-void Chunk::add_opcode(OpCode opcode) {
+Chunk::Chunk() : opcodes(), constants(), line_numbers() {
+    line_numbers.append(LineInfo());
+}
+
+
+void Chunk::add_opcode(OpCode opcode, uint line) {
     opcodes.append(opcode);
+    if (line_numbers[line_numbers.count()-1].line < line) {
+        line_numbers.append(LineInfo(0, line));
+    } else {
+       line_numbers[line_numbers.count()-1].count++;
+    }
 }
 
 void Chunk::add_constant(Value constant) {
@@ -25,6 +35,7 @@ void Chunk::add_constant(Value constant) {
     }
 
 }
+
 
 
 

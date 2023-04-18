@@ -17,12 +17,21 @@ enum OpCode : uint8_t {
 };
 
 
+struct LineInfo {
+    uint count;
+    uint line;
+    LineInfo() : count(0), line(0) {};
+    LineInfo(uint count_, uint line_) : count(count_), line(line_) {};
+};
+
 class Chunk {
     public:
         DynamicArray<OpCode> opcodes;
         DynamicArray<Value> constants;
-        void add_opcode(OpCode opcode);
+        DynamicArray<LineInfo> line_numbers;
+        void add_opcode(OpCode opcode, uint line);
         void add_constant(Value constant);
+        Chunk();
 };
 
 // size_t size_from_bytes(uint8_t* b) {

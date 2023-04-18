@@ -15,7 +15,7 @@ void disassemble_chunk(const Chunk &chunk, std::string name) {
 
 
 size_t disassemble_instruction(const Chunk &chunk, size_t offset) {
-    std::cout << offset << " ";
+    std::cout << std::setw(5) << offset << " ";
     OpCode instruction = chunk.opcodes[offset];
     switch(instruction) {
         case OP_RETURN:
@@ -44,6 +44,7 @@ size_t constant_instruction(const Chunk &chunk, size_t offset) {
     return offset+2;
 }
 
+// NOTE:This method makes assumptions of the byte order and only works on little endian machines.
 size_t constant_instruction_long(const Chunk &chunk, size_t offset) {
     uint8_t* b = reinterpret_cast<uint8_t*>(&chunk.opcodes[offset+1]);
     uint32_t const_idx = (b[0] | b[1] << 8 | b[2] << 16);
