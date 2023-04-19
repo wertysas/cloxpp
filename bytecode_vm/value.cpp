@@ -5,5 +5,5 @@
 #include "value.hpp"
 
 void print_value(Value v) {
-    std::cout << "Value:" << v << std::endl;
+    std::cout << std::right << std::setw(5) << v << std::endl;
 }

@@ -16,12 +16,14 @@ enum OpCode : uint8_t {
     OP_CONSTANT_LONG,
 };
 
-
+// Struct holding lineinfo for a line including start and end
+// offset of instructions in chunk if start=end, then empty
 struct LineInfo {
-    uint count;
     uint line;
-    LineInfo() : count(0), line(0) {};
-    LineInfo(uint count_, uint line_) : count(count_), line(line_) {};
+    uint start;
+    uint end;
+    LineInfo() : line(0), start(0), end(0) {};
+    LineInfo(uint line_, uint start_) : line(line_), start(start_), end(start_+1) {};
 };
 
 class Chunk {
@@ -30,7 +32,7 @@ class Chunk {
         DynamicArray<Value> constants;
         DynamicArray<LineInfo> line_numbers;
         void add_opcode(OpCode opcode, uint line);
-        void add_constant(Value constant);
+        void add_constant(Value constant, uint line);
         Chunk();
 };
 

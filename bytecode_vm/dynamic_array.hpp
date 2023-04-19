@@ -26,8 +26,20 @@ class DynamicArray {
         size_t idx_append(T e);
         T& operator[](size_t idx) const;
         T& operator[](size_t idx);
+        T& back();
+        T& back() const;
 
 };
+
+template<typename T>
+T &DynamicArray<T>::back() {
+    return elements_[count_-1];
+}
+
+template<typename T>
+T &DynamicArray<T>::back() const {
+    return elements_[count_-1];
+}
 
 template <typename T>
 DynamicArray<T>::DynamicArray() : count_(0), capacity_(INIT_CAPACITY) {
