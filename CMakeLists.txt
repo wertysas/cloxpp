@@ -1,8 +1,7 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.20)
 project(cloxpp)
 set(CMAKE_CXX_STANDARD 20)
 
-link_directories(/opt/homebrew/opt/llvm/lib/clang/16/lib/darwin)
 
 # Add main.cpp file of project root directory as source file
 set(SOURCE_FILES_TREEWALK treewalk_interpreter/main.cpp treewalk_interpreter/main.cpp treewalk_interpreter/token.cpp treewalk_interpreter/token.hpp treewalk_interpreter/scanner.cpp treewalk_interpreter/scanner.hpp treewalk_interpreter/error_handling.cpp treewalk_interpreter/error_handling.hpp)
