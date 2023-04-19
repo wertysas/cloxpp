@@ -13,7 +13,7 @@ Chunk::Chunk() : opcodes(), constants(), line_numbers() {
 void Chunk::add_opcode(OpCode opcode, uint line) {
     opcodes.append(opcode);
     if (line_numbers.back().line < line) {
-        line_numbers.append(LineInfo(line, opcodes.count()));
+        line_numbers.append(LineInfo(line, opcodes.count()-1));
     } else {
        line_numbers.back().end = opcodes.count()+1;
     }
