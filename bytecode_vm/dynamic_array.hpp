@@ -28,6 +28,7 @@ class DynamicArray {
         T& operator[](size_t idx);
         T& back();
         T& back() const;
+        T* head() {return elements_;}
 
 };
 

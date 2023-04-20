@@ -1,0 +1,91 @@
+//
+// Created by Johan Ericsson on 4/19/23.
+//
+
+#ifndef CLOXPP_STACK_HPP
+#define CLOXPP_STACK_HPP
+
+
+#include <cstdlib>
+
+
+template <typename T, size_t MAXSIZE>
+class StaticStack {
+public:
+    void reset();
+    T* top() { return top_; }
+    T* first() { return elements_; }
+    void push(T e);
+    T pop();
+
+    class Iterator;
+    Iterator begin();
+    Iterator end();
+
+private:
+    T elements_[MAXSIZE];
+    T* top_ = elements_;
+
+};
+
+template<typename T, size_t MAXSIZE>
+void StaticStack<T, MAXSIZE>::reset() {
+    top_ = elements_;
+}
+
+template<typename T, size_t MAXSIZE>
+void StaticStack<T, MAXSIZE>::push(T e) {
+    *top_ = e;
+    top_++;
+}
+
+template<typename T, size_t MAXSIZE>
+T StaticStack<T, MAXSIZE>::pop() {
+    top_--;
+    return *top_;
+}
+
+
+template<typename T, size_t MAXSIZE>
+typename StaticStack<T, MAXSIZE>::Iterator StaticStack<T, MAXSIZE>::end() {
+    return StaticStack::Iterator(elements_);
+}
+
+template<typename T, size_t MAXSIZE>
+typename StaticStack<T, MAXSIZE>::Iterator StaticStack<T, MAXSIZE>::begin() {
+    return StaticStack::Iterator(top_);
+}
+
+
+template <typename T, size_t MAXSIZE>
+class StaticStack<T, MAXSIZE>::Iterator {
+// using difference_type = T;
+// using value_type = T;
+// using pointer = const T*;
+// using reference = const T&;
+//using iterator_category = std::forward_iterator_tag;
+public:
+    explicit Iterator(T* ptr);
+    Iterator& operator++();
+    Iterator& operator--();
+    Iterator operator++(int);
+    Iterator operator--(int);
+    T& operator*();
+    bool operator==(const Iterator& iter);
+    bool operator!=(const Iterator& iter);
+private:
+    T* ptr_;
+};
+
+
+template<typename T, size_t MAXSIZE>
+StaticStack<T, MAXSIZE>::Iterator::Iterator(T *ptr) : ptr_(ptr) {}
+
+template<typename T, size_t MAXSIZE>
+typename StaticStack<T, MAXSIZE>::Iterator& StaticStack<T, MAXSIZE>::Iterator::operator++() {
+    ptr_++;
+    return *this;
+}
+
+
+#endif //CLOXPP_STACK_HPP

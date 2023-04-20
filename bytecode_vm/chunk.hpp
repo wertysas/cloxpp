@@ -36,11 +36,11 @@ class Chunk {
         Chunk();
 };
 
-// size_t size_from_bytes(uint8_t* b) {
-//     size_t size = (b[0] << 16 | b[1] << 8 | b[2]);
-//     return size;
-// }
 
-//using Chunk = DynamicArray<OpCode>;
+inline uint32_t constant_long_idx(OpCode* op) {
+    uint8_t* b = reinterpret_cast<uint8_t*>(op);
+    uint32_t const_idx = (b[0] | b[1] << 8 | b[2] << 16);
+    return const_idx;
+}
 
 #endif //CLOXPP_CHUNK_HPP
