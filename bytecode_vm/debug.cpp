@@ -25,12 +25,22 @@ size_t disassemble_instruction(const Chunk &chunk, size_t offset) {
     uint line = line_number(chunk, offset);
     std::cout << std::setw(5) << line << "\t";
     switch(instruction) {
-        case OP_RETURN:
-            return simple_instruction("OP_RETURN", offset);
         case OP_CONSTANT:
             return constant_instruction(chunk, offset);
         case OP_CONSTANT_LONG:
             return constant_instruction_long(chunk, offset);
+        case OP_ADD:
+            return simple_instruction("OP_ADD", offset);
+        case OP_SUBTRACT:
+            return simple_instruction("OP_SUBTRACT", offset);
+        case OP_MULTIPLY:
+            return simple_instruction("OP_MULTIPLY", offset);
+        case OP_DIVIDE:
+            return simple_instruction("OP_DIVIDE", offset);
+        case OP_NEGATE:
+            return simple_instruction("OP_NEGATE", offset);
+        case OP_RETURN:
+            return simple_instruction("OP_RETURN", offset);
         default:
             std::cout << "Unknown opcode " << static_cast<unsigned int>(instruction) << std::endl;
             return offset+1;

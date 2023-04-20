@@ -24,6 +24,7 @@ class VirtualMachine {
 public:
     InterpretResult interpret(Chunk* chunk);
     InterpretResult run();
+    //VirtualMachine(Chunk* chunk) : chunk_(chunk), ip(chunk->opcodes.head()), stack_() {}
 
 };
 

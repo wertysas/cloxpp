@@ -11,9 +11,14 @@
 
 
 enum OpCode : uint8_t {
-    OP_RETURN,
     OP_CONSTANT,
     OP_CONSTANT_LONG,
+    OP_ADD,
+    OP_SUBTRACT,
+    OP_MULTIPLY,
+    OP_DIVIDE,
+    OP_NEGATE,
+    OP_RETURN,
 };
 
 // Struct holding lineinfo for a line including start and end

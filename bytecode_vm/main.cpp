@@ -7,15 +7,22 @@
 #include "dynamic_array.hpp"
 #include "chunk.hpp"
 #include "debug.hpp"
+#include "virtual_machine.hpp"
 
 int main(int argc, char* argv[]) {
     Chunk chunk{};
-    double x = 1.5, y;
-    for (int i=1; i< 300; i++) {
-        y = x*i;
-        chunk.add_constant(y, 123);
-    }
-    chunk.add_opcode(OP_RETURN, 124);
+
+    chunk.add_constant(1.2, 123);
+    chunk.add_constant(3.4, 123);
+    chunk.add_opcode(OP_ADD, 123);
+    chunk.add_constant(5.6, 123);
+    chunk.add_opcode(OP_DIVIDE, 123);
+    chunk.add_opcode(OP_NEGATE,123);
+    chunk.add_opcode(OP_RETURN,123);
+
+
+    VirtualMachine VM{};
     disassemble_chunk(chunk, "test chunk");
+    VM.interpret(&chunk);
     return 0;
 }
