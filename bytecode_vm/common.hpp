@@ -8,9 +8,12 @@
 #include <stdint.h> // typedefs for fixed width integer types and macro constants
 #include <cstddef>
 #include <iostream>
+#include <string>
 #include <iomanip>
 
 using uint = unsigned int;
-
+using std::string;
+using std::cin;
+using std::cout;
 
 #endif //CLOXPP_COMMON_HPP
