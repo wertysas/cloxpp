@@ -27,13 +27,13 @@ const std::map<std::string, TokenType> Scanner::keyword_table = {
 std::vector<Token> Scanner::scanTokens() {
     while (current < source.length()) {
         start = current;
-        scanToken();
+        next_token();
     }
     return tokens;
 
 }
 
-void Scanner::scanToken() {
+void Scanner::next_token() {
     char c = advance();
     switch (c) {
 
@@ -214,7 +214,7 @@ void Scanner::identifier() {
     //std::cout << "-----------------------------------------------" << std::endl;
     //std::cout << "Scanner::identifier \tcurrent: " << current << "\tsource[current]: " << source[current] << std::endl;
     while (is_alpha_numeric(peek())) {
-    //    std::cout << "Peek :" << peek() << "\tvalue is alpha numeric" << std::endl;
+    //    std::cout << "Peek :" << peek2() << "\tvalue is alpha numeric" << std::endl;
         current++;}
     //std::cout << "start: " << start << "\tcurrent: " << current << std::endl;
     TokenType type;

@@ -11,14 +11,34 @@
 class Scanner {
     public:
         Scanner(const string& source);
-        Token scanToken();
+        Token next_token();
     private:
         const char* start_;
         const char* current_;
         uint line_;
-        bool end_of_file();
 
+    char advance();
+    bool match(char expected);
+    char peek();
+    void handle_white_space();
+    char peek2();
+    bool end_of_string();
 
+    Token handle_string();
+
+    Token token(TokenType type);
+
+    Token errortoken(const char *error_msg);
+
+    bool is_digit(char c);
+
+    Token handle_numeral();
+
+    bool is_alpha(char c);
+
+    Token handle_identifier();
+
+    TokenType identifier_token();
 };
 
 

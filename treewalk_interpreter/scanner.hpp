@@ -25,7 +25,7 @@ class Scanner {
         string source;
         std::vector<Token> tokens;
         ErrorReporter& errorReporter;
-        void scanToken();
+        void next_token();
         char advance();
         void addToken(TokenType type);
         void addToken(TokenType type, void* literal);
