@@ -4,9 +4,10 @@
 
 #include "parser.hpp"
 
-void Parser::error(const char *message) {
-    error(previous_, message);
-}
+
+// errorAtCurrent -> error_reporter_.report(parser.current, message)
+// error -> error_report_.report(parser.previous, message)
+
 
 void Parser::advance() {
 

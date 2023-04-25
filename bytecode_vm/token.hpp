@@ -32,10 +32,10 @@ enum TokenType {
 struct Token {
     TokenType type;
     const char* start;
-    uint lenght;
+    uint length;
     uint line;
     Token(TokenType type_, const char* start_, uint length_, uint line_):
-        type(type_), start(start_), lenght(length_), line(line_)  {};
+        type(type_), start(start_), length(length_), line(line_)  {};
 
 };
 

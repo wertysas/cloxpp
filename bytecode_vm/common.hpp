@@ -8,8 +8,9 @@
 #include <stdint.h> // typedefs for fixed width integer types and macro constants
 #include <cstddef>
 #include <iostream>
-#include <string>
 #include <iomanip>
+#include <string>
+#include <vector>
 
 using uint = unsigned int;
 using std::string;
