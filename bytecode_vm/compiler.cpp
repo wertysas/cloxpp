@@ -5,6 +5,6 @@
 #include "compiler.hpp"
 #include "scanner.hpp"
 
-void compile(const string& source) {
+bool compile(const string &source) {
     Scanner scanner(source);
 }

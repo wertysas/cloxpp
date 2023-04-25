@@ -39,5 +39,14 @@ struct Token {
 
 };
 
+void error(const Token& token, const char* message) {
+    std::cerr << "[line " << token.line << "] Error";
+    if (token.type == TOKEN_EOF) {
+        std::cerr << " at end of file";
+    } else if (token.type == TOKEN_ERROR) {
+        // NOTHING
+    }
+}
+
 
 #endif //CLOXPP_TOKEN_HPP

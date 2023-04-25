@@ -15,7 +15,7 @@ Token Scanner::next_token() {
     }
 
     char c = advance();
-    if (is_alpha())
+    if (is_alpha(c)) return handle_identifier();
     if (is_digit(c)) return handle_numeral();
 
     switch (c) {
@@ -106,7 +106,6 @@ Token Scanner::handle_string() {
 
 Token Scanner::handle_numeral() {
     while (is_digit(peek())) advance();
-y
     if (peek()=='.' && is_digit(peek2())) {
         advance();
         while (is_digit(peek())) advance();
@@ -159,11 +158,60 @@ inline bool Scanner::is_alpha(char c) {
 
 TokenType Scanner::identifier_token() {
     switch (*start_) {
-        case 'a': return check_keyword(3, "nd", TOKEN_AND);
+        case 'a':
+            return check_keyword(3, "and", TOKEN_AND);
+        case 'c':
+            return check_keyword(5, "class", TOKEN_CLASS);
+        case 'e':
+            return check_keyword(4, "else", TOKEN_ELSE);
+        case 'f':
+            if (current_-start_>1) {
+                switch (start_[1]) {
+                    case 'a':
+                        return check_keyword(5, "false", TOKEN_FALSE);
+                    case 'o':
+                        return check_keyword(3, "for", TOKEN_FOR);
+                    case 'u':
+                        return check_keyword(3, "fun", TOKEN_FUN);
+
+                }
+            }
+            break;
+        case 'i':
+            return check_keyword(2, "if", TOKEN_IF);
+        case 'n':
+            return check_keyword(3, "nil", TOKEN_NIL);
+        case 'o':
+            return check_keyword(2, "or", TOKEN_OR);
+        case 'p':
+            return check_keyword(5, "print", TOKEN_PRINT);
+        case 'r':
+            return check_keyword(6, "return", TOKEN_RETURN);
+        case 's':
+            return check_keyword(5, "super", TOKEN_SUPER);
+        case 't':
+            if (current_-start_>1) {
+                switch(start_[1]) {
+                    case 'h':
+                        return check_keyword(4, "this", TOKEN_THIS);
+                    case 'r':
+                        return check_keyword(4, "true", TOKEN_TRUE);
+                }
+            }
+            break;
+        case 'v':
+            return check_keyword(3, "var", TOKEN_VAR);
+        case 'w':
+            return check_keyword(5, "while", TOKEN_WHILE);
     }
+
     return TOKEN_IDENTIFIER;
 }
 
-inline bool Scanner::check_keyword(uint start, uint len, const char* keyword) {
-   if ()
+inline TokenType Scanner::check_keyword(uint len, const char* keyword, TokenType type) {
+   if (current_-start_==len && memcmp(start_, keyword, len)==0) {
+       return type;
+   }
+
+   return TOKEN_IDENTIFIER;
 }

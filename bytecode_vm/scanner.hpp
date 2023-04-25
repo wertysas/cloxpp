@@ -39,6 +39,8 @@ class Scanner {
     Token handle_identifier();
 
     TokenType identifier_token();
+
+    TokenType check_keyword(uint len, const char *keyword, TokenType type);
 };
 
 

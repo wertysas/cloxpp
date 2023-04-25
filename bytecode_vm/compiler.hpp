@@ -7,7 +7,11 @@
 
 #include "common.hpp"
 
-void compile(const std::string& source);
+class Compiler {
+
+};
+
+bool compile(const string &source);
 
 
 #endif //CLOXPP_COMPILER_HPP
