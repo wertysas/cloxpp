@@ -3,9 +3,18 @@
 //
 
 #include "scanner.hpp"
-#include "../treewalk_interpreter/scanner.hpp"
 
 Scanner::Scanner(const string &source) : start_(source.c_str()), current_(source.c_str()), line_(1) {}
+
+std::vector<Token> Scanner::scan_tokens() {
+    std::vector<Token> tokens{};
+    Token token = next_token();
+    while (token.type != TOKEN_EOF) {
+        tokens.emplace_back(token);
+        token = next_token();
+    }
+    return tokens;
+}
 
 Token Scanner::next_token() {
     handle_white_space();
@@ -215,3 +224,4 @@ inline TokenType Scanner::check_keyword(uint len, const char* keyword, TokenType
 
    return TOKEN_IDENTIFIER;
 }
+

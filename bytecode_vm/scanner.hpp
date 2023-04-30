@@ -12,6 +12,7 @@ class Scanner {
     public:
         Scanner(const string& source);
         Token next_token();
+        std::vector<Token> scan_tokens();
     private:
         const char* start_;
         const char* current_;
