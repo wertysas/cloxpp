@@ -6,7 +6,7 @@
 
 
 
-void disassemble_chunk(const Chunk &chunk, std::string name) {
+void disassemble_chunk(const Chunk &chunk, const std::string name) {
     std::cout << "==" << name << "==" << std::endl;
     std::cout << std::right << std::setw(5) << "CHIDX" << "\t" << "LINE"
                 << "\t" << std::left << std::setw(16) << "OPCODE"

@@ -7,15 +7,33 @@
 #include "parser.hpp"
 #include "chunk.hpp"
 
-bool compile(const string &source, Chunk& chunk) {
+#ifdef DEBUG_PRINT_CODE
+#include "debug.hpp"
+#endif
+
+
+
+bool compile(const string &source, Chunk& bytecode) {
     Scanner scanner(source);
-    Chunk bytecode;
-    std::vector tokens = scanner.scan_tokens();
+    std::vector<Token> tokens = scanner.scan_tokens();
+#ifdef DEBUG_PRINT_CODE
+    std::cout << "tokens size: " << tokens.size() << std::endl;
+    for (auto t: tokens) {
+        std::cout << "TokenType: " << token_to_string(t.type) << std::endl;
+    }
+#endif
     ErrorReporter error_reporter{};
     Parser parser(tokens, bytecode, error_reporter);
-    parser.advance();
-//    expression();
-//    consume(TOKEN_EOF, "Expect end of expression.");
+    //parser.advance();
+    parser.expression();
+    parser.consume(TOKEN_EOF, "Expect end of expression.");
     bytecode.add_opcode(OP_RETURN, 1000);
+
+    // end_compiler()
+#ifdef DEBUG_PRINT_CODE
+    if (!parser.had_error()) {
+        disassemble_chunk(bytecode, "code");
+    }
+#endif
     return !parser.had_error();
 }

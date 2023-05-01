@@ -26,8 +26,7 @@ InterpretResult VirtualMachine::run() {
         }
         disassemble_instruction(*chunk_, static_cast<int>(ip-chunk_->opcodes.head()));
 #endif
-        OpCode instruction;
-        switch(instruction = READ_BYTE()) {
+        switch(READ_BYTE()) {
             case OP_CONSTANT: {
                 Value constant = READ_CONSTANT();
                 stack_.push(constant);

@@ -6,12 +6,9 @@
 #define CLOXPP_COMPILER_HPP
 
 #include "common.hpp"
+#include "chunk.hpp"
 
-class Compiler {
-
-};
-
-bool compile(const string &source);
+bool compile(const string &source, Chunk& bytecode);
 
 
 #endif //CLOXPP_COMPILER_HPP

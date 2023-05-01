@@ -3,3 +3,7 @@
 //
 
 #include "token.hpp"
+
+const char* token_to_string(TokenType type) {
+    return token_types[type];
+}

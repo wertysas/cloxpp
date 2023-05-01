@@ -3,6 +3,7 @@
 //
 
 #include "scanner.hpp"
+#include <cstring>
 
 Scanner::Scanner(const string &source) : start_(source.c_str()), current_(source.c_str()), line_(1) {}
 
@@ -13,6 +14,7 @@ std::vector<Token> Scanner::scan_tokens() {
         tokens.emplace_back(token);
         token = next_token();
     }
+    tokens.emplace_back(token);
     return tokens;
 }
 

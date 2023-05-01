@@ -9,10 +9,11 @@
 #include "chunk.hpp"
 #include "debug.hpp"
 #include "virtual_machine.hpp"
+#include "compiler.hpp"
 
 void repl();
 
-InterpretResult interpret(std::string basicString);
+InterpretResult interpret(std::string& basicString);
 
 void run_file(char *string);
 
@@ -67,6 +68,13 @@ void repl() {
     }
 }
 
-InterpretResult interpret(std::string basicString) {
-    compile
+InterpretResult interpret(std::string& source) {
+    Chunk bytecode{};
+    if (!compile(source, bytecode)) {
+        return INTERPRET_COMPILE_ERROR;
+    }
+
+    VirtualMachine VM{};
+    InterpretResult result = VM.interpret(&bytecode);
+    return result;
 }
