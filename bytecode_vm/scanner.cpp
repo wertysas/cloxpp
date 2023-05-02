@@ -13,7 +13,7 @@ std::vector<Token> Scanner::scan_tokens() {
     while (token.type != TOKEN_EOF) {
         tokens.emplace_back(token);
         token = next_token();
-    }
+}
     tokens.emplace_back(token);
     return tokens;
 }
