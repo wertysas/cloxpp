@@ -36,17 +36,17 @@ Parser::Parser(const std::vector<Token>& tokens,Chunk& chunk, ErrorReporter& err
         parse_rules[TOKEN_AND]          = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_CLASS]        = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_ELSE]         = {nullptr,             nullptr,            PREC_NONE};
-        parse_rules[TOKEN_FALSE]        = {nullptr,             nullptr,            PREC_NONE};
+        parse_rules[TOKEN_FALSE]        = {&Parser::literal,    nullptr,            PREC_NONE};
         parse_rules[TOKEN_FOR]          = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_FUN]          = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_IF]           = {nullptr,             nullptr,            PREC_NONE};
-        parse_rules[TOKEN_NIL]          = {nullptr,             nullptr,            PREC_NONE};
+        parse_rules[TOKEN_NIL]          = {&Parser::literal,    nullptr,            PREC_NONE};
         parse_rules[TOKEN_OR]           = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_PRINT]        = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_RETURN]       = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_SUPER]        = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_THIS]         = {nullptr,             nullptr,            PREC_NONE};
-        parse_rules[TOKEN_TRUE]         = {nullptr,             nullptr,            PREC_NONE};
+        parse_rules[TOKEN_TRUE]         = {&Parser::literal,    nullptr,            PREC_NONE};
         parse_rules[TOKEN_VAR]          = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_WHILE]        = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_ERROR]        = {nullptr,             nullptr,            PREC_NONE};
@@ -88,8 +88,8 @@ inline void Parser::error(const char* message) {
 
 
 void Parser::number() {
-    Value val = strtod(previous().start, nullptr);
-    chunk_.add_constant(val, previous().line);
+    Value val{strtod(previous().start, nullptr)};
+    chunk_.add_constant(val.number_value(), previous().line);
 }
 
 void Parser::grouping() {
@@ -159,6 +159,23 @@ void Parser::binary() {
     }
 }
 
+void Parser::literal() {
+    switch(previous().type) {
+        case TOKEN_FALSE:
+            emit_byte(OP_FALSE);
+            break;
+        case TOKEN_NIL:
+            emit_byte(OP_NIL);
+            break;
+        case TOKEN_TRUE:
+            emit_byte(OP_TRUE);
+            break;
+        default:
+            return;
+    }
+}
+
+
 inline ParseRule* Parser::parse_rule(TokenType type) {
     return &parse_rules[type];
 }
@@ -175,5 +192,6 @@ void Parser::emit_double_byte(OpCode op1, OpCode op2) {
     chunk_.add_opcode(op1, tokens_[current_-1].line);
     chunk_.add_opcode(op2, tokens_[current_-1].line);
 }
+
 
 

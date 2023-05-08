@@ -24,15 +24,24 @@ class Value {
     Value() : value_type_(VAL_NIL), value_() { value_.number=0; } // empty ctor for NIL
     Value(bool value) : value_type_(VAL_BOOL), value_() { value_.boolean=value; }
     Value(double number) : value_type_(VAL_NUMBER), value_() { value_.number=number; }
-    private:
+    inline bool bool_value() const { return value_.boolean; }
+    inline double number_value() const { return value_.number; }
+    inline bool bool_value() { return value_.boolean; }
+    inline double& number_value() { return value_.number; }
+    friend Value operator+(const Value& v1, const Value& v2);
+    friend Value operator-(const Value& v1, const Value& v2);
+    friend Value operator/(const Value& v1, const Value& v2);
+    friend Value operator*(const Value& v1, const Value& v2);
+
+    inline bool is_number() const { return value_type_==VAL_NUMBER; }
+    inline bool is_bool() const { return value_type_==VAL_BOOL; }
+    inline bool is_nil() const { return value_type_==VAL_NIL; }
+    inline ValueType value_type() const { return value_type_; }
+private:
     ValueType value_type_;
     ValueUnion value_;
-    inline bool bool_value() { return value_.boolean; }
-    inline double number_value() { return value_.number; }
-    inline bool is_bool() { return value_type_==VAL_BOOL; }
-    inline bool is_nil() { return value_type_==VAL_NIL; }
-    inline bool is_number() { return value_type_==VAL_NUMBER; }
 };
+
 
 
 

@@ -9,12 +9,15 @@
 #include <cstdlib>
 
 
-template <typename T, size_t MAXSIZE>
+template <typename T, size_t MAXSIZE=2048>
 class StaticStack {
 public:
     void reset();
     T* top() { return top_; }
     T* first() { return elements_; }
+    T& operator[](size_t idx) const;
+    T& operator[](size_t idx);
+
     void push(T e);
     T pop();
 
@@ -43,6 +46,22 @@ template<typename T, size_t MAXSIZE>
 T StaticStack<T, MAXSIZE>::pop() {
     top_--;
     return *top_;
+}
+
+template<typename T, size_t MAXSIZE>
+T& StaticStack<T, MAXSIZE>::operator[](size_t idx) const {
+    if (idx < MAXSIZE) {
+        return elements_[idx];
+    }
+    exit(1);
+}
+
+template<typename T, size_t MAXSIZE>
+T& StaticStack<T, MAXSIZE>::operator[](size_t idx) {
+    if (idx < MAXSIZE) {
+        return elements_[idx];
+    }
+    exit(1);
 }
 
 

@@ -18,11 +18,20 @@ InterpretResult VirtualMachine::interpret(Chunk *chunk) {
 // we use a macro for readability and to force inlining
 #define READ_BYTE() (*ip++)
 #define READ_CONSTANT() (chunk_->constants[static_cast<uint8_t>(READ_BYTE())])
+// MACROS for type checks 2 force inlining
+#define BINARY_NUMBER_CHECK() \
+    do { \
+        if (!stack_[0].is_number() || !stack_[1].is_number()) { \
+        runtime_error("Addition operands must be numbers."); \
+        return INTERPRET_RUNTIME_ERROR; \
+        } \
+    } while (false)
+
 InterpretResult VirtualMachine::run() {
     for(;;) {
 #ifdef DEBUG_TRACE_EXECUTION
         for (Value* slot = stack_.first(); slot<stack_.top(); slot++) {
-            std::cout << "[ " << *slot << " ]" << std::endl;
+            std::cout << "[ " << slot->number_value() << " ]" << std::endl;
         }
         disassemble_instruction(*chunk_, static_cast<int>(ip-chunk_->opcodes.head()));
 #endif
@@ -39,23 +48,40 @@ InterpretResult VirtualMachine::run() {
                 stack_.push(constant);
                 break;
             }
+            case OP_NIL:
+                stack_.push(Value());
+                break;
+            case OP_TRUE:
+                stack_.push(Value(true));
+                break;
+            case OP_FALSE:
+                stack_.push(Value(false));
+                break;
             case OP_NEGATE: {
-                stack_.push(-stack_.pop());
+                if (!stack_[0].is_number()) {
+                    runtime_error("Operand must be a number.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                stack_.push(-stack_.pop().number_value());
                 break;
             }
             case OP_ADD: {
-               stack_.push(binary_add<Value>(stack_.pop(), stack_.pop()));
-               break;
+                BINARY_NUMBER_CHECK();
+                stack_.push(binary_add<Value>(stack_.pop(), stack_.pop()));
+                break;
             }
             case OP_SUBTRACT: {
+                BINARY_NUMBER_CHECK();
                 stack_.push(binary_subtract<Value>(stack_.pop(), stack_.pop()));
                 break;
             }
             case OP_MULTIPLY: {
+                BINARY_NUMBER_CHECK();
                 stack_.push(binary_multiply<Value>(stack_.pop(), stack_.pop()));
                 break;
             }
             case OP_DIVIDE: {
+                BINARY_NUMBER_CHECK();
                 stack_.push(binary_divide<Value>(stack_.pop(), stack_.pop()));
                 break;
             }
@@ -67,6 +93,21 @@ InterpretResult VirtualMachine::run() {
         }
     }
 }
+
+void VirtualMachine::runtime_error(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+    fputs("\n", stderr);
+
+    size_t offset = ip - chunk_->opcodes.head()-1;
+    uint line = line_number(*chunk_, offset);
+    std::cerr << "[line " << line << "] in script" << std::endl;
+    stack_ .reset();
+}
+
+
 #undef READ_BYTE
 #undef READ_CONSTANT
 

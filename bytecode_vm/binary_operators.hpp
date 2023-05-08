@@ -6,6 +6,12 @@
 #define CLOXPP_BINARY_OPERATORS_HPP
 
 
+
+template<typename T, typename OP>
+inline T binary_operator(T a, T b) {
+    return OP(a,b);
+}
+
 template <typename T>
 T binary_add(T a, T b) {
     return a+b;

@@ -29,6 +29,12 @@ size_t disassemble_instruction(const Chunk &chunk, size_t offset) {
             return constant_instruction(chunk, offset);
         case OP_CONSTANT_LONG:
             return constant_instruction_long(chunk, offset);
+        case OP_NIL:
+            return simple_instruction("OP_NIL", offset);
+        case OP_TRUE:
+            return simple_instruction("OP_TRUE", offset);
+        case OP_FALSE:
+            return simple_instruction("OP_FALSE", offset);
         case OP_ADD:
             return simple_instruction("OP_ADD", offset);
         case OP_SUBTRACT:

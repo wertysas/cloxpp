@@ -52,6 +52,7 @@ public:
     void number();
     void grouping();
     void expression();
+    void literal();
     void unary();
     void binary();
     void parse_precedence(Precedence precedence);
