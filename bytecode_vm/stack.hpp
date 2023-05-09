@@ -8,15 +8,20 @@
 
 #include <cstdlib>
 
+#include <iostream>
 
-template <typename T, size_t MAXSIZE>
+template <typename T, size_t MAXSIZE=2048>
 class StaticStack {
 public:
     void reset();
     T* top() { return top_; }
     T* first() { return elements_; }
+    T& operator[](size_t idx) const;
+    T& operator[](size_t idx);
+
     void push(T e);
     T pop();
+    const T& peek(uint dist);
 
     class Iterator;
     Iterator begin();
@@ -43,6 +48,22 @@ template<typename T, size_t MAXSIZE>
 T StaticStack<T, MAXSIZE>::pop() {
     top_--;
     return *top_;
+}
+
+template<typename T, size_t MAXSIZE>
+T& StaticStack<T, MAXSIZE>::operator[](size_t idx) const {
+    if (idx < MAXSIZE) {
+        return elements_[idx];
+    }
+    exit(1);
+}
+
+template<typename T, size_t MAXSIZE>
+T& StaticStack<T, MAXSIZE>::operator[](size_t idx) {
+    if (idx < MAXSIZE) {
+        return elements_[idx];
+    }
+    exit(1);
 }
 
 
@@ -76,6 +97,11 @@ public:
 private:
     T* ptr_;
 };
+
+template<typename T, size_t MAXSIZE>
+const T& StaticStack<T, MAXSIZE>::peek(uint dist) {
+    return *(top_-1-dist);
+}
 
 
 template<typename T, size_t MAXSIZE>

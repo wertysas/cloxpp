@@ -7,6 +7,7 @@
 
 #include "chunk.hpp"
 #include "stack.hpp"
+#include "error_handling.hpp"
 
 using ValueStack = StaticStack<Value, 1024>;
 
@@ -18,14 +19,15 @@ enum InterpretResult {
 };
 
 class VirtualMachine {
-    OpCode* ip; // instruction pointer
-    Chunk* chunk_;
-    ValueStack stack_;
 public:
     InterpretResult interpret(Chunk* chunk);
     InterpretResult run();
     //VirtualMachine(Chunk* chunk) : chunk_(chunk), ip(chunk->opcodes.head()), stack_() {}
-
+private:
+    OpCode* ip; // instruction pointer
+    Chunk* chunk_;
+    ValueStack stack_;
+    void runtime_error(const char* fmt...);
 };
 
 
