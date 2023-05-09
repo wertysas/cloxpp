@@ -2,11 +2,11 @@
 // Created by Johan Ericsson on 4/19/23.
 //
 
+#include <cstdarg>
 #include "common.hpp"
 #include "debug.hpp"
 #include "binary_operators.hpp"
 #include "virtual_machine.hpp"
-
 
 InterpretResult VirtualMachine::interpret(Chunk *chunk) {
     chunk_ = chunk;
@@ -21,8 +21,8 @@ InterpretResult VirtualMachine::interpret(Chunk *chunk) {
 // MACROS for type checks 2 force inlining
 #define BINARY_NUMBER_CHECK() \
     do { \
-        if (!stack_[0].is_number() || !stack_[1].is_number()) { \
-        runtime_error("Addition operands must be numbers."); \
+        if (!stack_.peek(0).is_number() || !stack_.peek(1).is_number()) { \
+        runtime_error("Numeric binary operation requires operands to be numbers."); \
         return INTERPRET_RUNTIME_ERROR; \
         } \
     } while (false)
@@ -30,9 +30,13 @@ InterpretResult VirtualMachine::interpret(Chunk *chunk) {
 InterpretResult VirtualMachine::run() {
     for(;;) {
 #ifdef DEBUG_TRACE_EXECUTION
-        for (Value* slot = stack_.first(); slot<stack_.top(); slot++) {
-            std::cout << "[ " << slot->number_value() << " ]" << std::endl;
+        std::cout << "STACK:" << std ::endl;
+        for (Value* slot = stack_.top(); slot>stack_.first();) {
+            std::cout << "[ ";
+            print_value(*(--slot));
+            std::cout << " ]" << std::endl;
         }
+        std::cout << "**********NEXT INSTRUCTION***************" << std ::endl;
         disassemble_instruction(*chunk_, static_cast<int>(ip-chunk_->opcodes.head()));
 #endif
         switch(READ_BYTE()) {
@@ -57,8 +61,48 @@ InterpretResult VirtualMachine::run() {
             case OP_FALSE:
                 stack_.push(Value(false));
                 break;
+            case OP_NOT:
+                stack_.push(Value(check_falsiness(stack_.pop())));
+                break;
+            case OP_EQUAL:
+                //  COMMUTATIVE
+                stack_.push(Value(stack_.pop()==stack_.pop()));
+                break;
+            case OP_NOT_EQUAL:
+                //  COMMUTATIVE
+                stack_.push(Value(stack_.pop()!=stack_.pop()));
+                break;
+            case OP_GREATER: {
+                BINARY_NUMBER_CHECK(); // only for numbers
+                Value v2 = stack_.pop();
+                Value v1 = stack_.pop();
+                stack_.push(Value(v1>v2));
+                break;
+            };
+            case OP_GREATER_EQUAL: {
+                BINARY_NUMBER_CHECK(); // only for numbers
+                Value v2 = stack_.pop();
+                Value v1 = stack_.pop();
+                stack_.push(Value(v1>=v2));
+                break;
+            };
+            case OP_LESS: {
+                BINARY_NUMBER_CHECK(); // only for numbers
+                Value v2 = stack_.pop();
+                Value v1 = stack_.pop();
+                stack_.push(Value(v1<v2));
+                break;
+            };
+            case OP_LESS_EQUAL: {
+                BINARY_NUMBER_CHECK(); // only for numbers
+                Value v2 = stack_.pop();
+                Value v1 = stack_.pop();
+                stack_.push(Value(v1<=v2));
+                break;
+            };
+
             case OP_NEGATE: {
-                if (!stack_[0].is_number()) {
+                if (!stack_.peek(0).is_number()) {
                     runtime_error("Operand must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -77,12 +121,20 @@ InterpretResult VirtualMachine::run() {
             }
             case OP_MULTIPLY: {
                 BINARY_NUMBER_CHECK();
-                stack_.push(binary_multiply<Value>(stack_.pop(), stack_.pop()));
+                Value v2 = stack_.pop();
+                Value v1 = stack_.pop();
+                stack_.push(binary_multiply<Value>(v1, v2));
+                //stack_.push(binary_multiply<Value>(stack_.pop(), stack_.pop()));
                 break;
             }
             case OP_DIVIDE: {
                 BINARY_NUMBER_CHECK();
-                stack_.push(binary_divide<Value>(stack_.pop(), stack_.pop()));
+                // DIVISION  IS NONCOMMUTATIVE and it's not defined which function in
+                // the parameters below is called first. Hence we introduce local vars
+                // stack_.push(binary_divide<Value>(stack_.pop(), stack_.pop()));
+                Value denom = stack_.pop();
+                Value num = stack_.pop();
+                stack_.push(binary_divide<Value>(num, denom));
                 break;
             }
             case OP_RETURN: {

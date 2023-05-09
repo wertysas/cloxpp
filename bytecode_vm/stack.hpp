@@ -8,6 +8,7 @@
 
 #include <cstdlib>
 
+#include <iostream>
 
 template <typename T, size_t MAXSIZE=2048>
 class StaticStack {
@@ -20,6 +21,7 @@ public:
 
     void push(T e);
     T pop();
+    const T& peek(uint dist);
 
     class Iterator;
     Iterator begin();
@@ -95,6 +97,11 @@ public:
 private:
     T* ptr_;
 };
+
+template<typename T, size_t MAXSIZE>
+const T& StaticStack<T, MAXSIZE>::peek(uint dist) {
+    return *(top_-1-dist);
+}
 
 
 template<typename T, size_t MAXSIZE>

@@ -22,14 +22,14 @@ Parser::Parser(const std::vector<Token>& tokens,Chunk& chunk, ErrorReporter& err
         parse_rules[TOKEN_SEMICOLON]    = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_SLASH]        = {nullptr,             &Parser::binary,    PREC_FACTOR};
         parse_rules[TOKEN_STAR]         = {nullptr,             &Parser::binary,    PREC_FACTOR};
-        parse_rules[TOKEN_BANG]         = {nullptr,             nullptr,            PREC_NONE};
-        parse_rules[TOKEN_BANG_EQUAL]   = {nullptr,             nullptr,            PREC_NONE};
+        parse_rules[TOKEN_BANG]         = {&Parser::unary,      nullptr,            PREC_NONE};
+        parse_rules[TOKEN_BANG_EQUAL]   = {nullptr,             &Parser::binary,    PREC_EQUALITY};
         parse_rules[TOKEN_EQUAL]        = {nullptr,             nullptr,            PREC_NONE};
-        parse_rules[TOKEN_EQUAL_EQUAL]  = {nullptr,             nullptr,            PREC_NONE};
-        parse_rules[TOKEN_GREATER]      = {nullptr,             nullptr,            PREC_NONE};
-        parse_rules[TOKEN_GREATER_EQUAL]= {nullptr,             nullptr,            PREC_NONE};
-        parse_rules[TOKEN_LESS]         = {nullptr,             nullptr,            PREC_NONE};
-        parse_rules[TOKEN_LESS_EQUAL]   = {nullptr,             nullptr,            PREC_NONE};
+        parse_rules[TOKEN_EQUAL_EQUAL]  = {nullptr,             &Parser::binary,    PREC_EQUALITY};
+        parse_rules[TOKEN_GREATER]      = {nullptr,             &Parser::binary,    PREC_COMPARISON};
+        parse_rules[TOKEN_GREATER_EQUAL]= {nullptr,             &Parser::binary,    PREC_COMPARISON};
+        parse_rules[TOKEN_LESS]         = {nullptr,             &Parser::binary,    PREC_COMPARISON};
+        parse_rules[TOKEN_LESS_EQUAL]   = {nullptr,             &Parser::binary,    PREC_COMPARISON};
         parse_rules[TOKEN_IDENTIFIER]   = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_STRING]       = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_NUMBER]       = {&Parser::number,     nullptr,            PREC_NONE};
@@ -89,7 +89,7 @@ inline void Parser::error(const char* message) {
 
 void Parser::number() {
     Value val{strtod(previous().start, nullptr)};
-    chunk_.add_constant(val.number_value(), previous().line);
+    chunk_.add_constant(val, previous().line);
 }
 
 void Parser::grouping() {
@@ -104,6 +104,9 @@ void Parser::unary() {
     parse_precedence(PREC_UNARY);
 
     switch (operator_type) {
+        case TOKEN_BANG:
+            emit_byte(OP_NOT);
+            break;
         case TOKEN_MINUS:
             emit_byte(OP_NEGATE);
             break;
@@ -142,6 +145,24 @@ void Parser::binary() {
     ParseRule* rule = parse_rule(operator_type);
     parse_precedence(static_cast<Precedence>(rule->precedence+1));
     switch (operator_type) {
+        case TOKEN_BANG_EQUAL:
+            emit_byte(OP_NOT_EQUAL);
+            break;
+        case TOKEN_EQUAL_EQUAL:
+            emit_byte(OP_EQUAL);
+            break;
+        case TOKEN_GREATER:
+            emit_byte(OP_GREATER);
+            break;
+        case TOKEN_GREATER_EQUAL:
+            emit_byte(OP_GREATER_EQUAL);
+            break;
+        case TOKEN_LESS:
+            emit_byte(OP_LESS);
+            break;
+        case TOKEN_LESS_EQUAL:
+            emit_byte(OP_LESS_EQUAL);
+            break;
         case TOKEN_PLUS:
             emit_byte(OP_ADD);
             break;

@@ -13,23 +13,23 @@ inline T binary_operator(T a, T b) {
 }
 
 template <typename T>
-T binary_add(T a, T b) {
+inline T binary_add(T a, T b) {
     return a+b;
 }
 
 
 template <typename T>
-T binary_subtract(T a, T b) {
+inline T binary_subtract(T a, T b) {
     return a-b;
 }
 
 template <typename T>
-T binary_multiply(T a, T b) {
+inline T binary_multiply(T a, T b) {
     return a*b;
 }
 
 template <typename T>
-T binary_divide(T a, T b) {
+inline T binary_divide(T a, T b) {
     return a/b;
 }
 
