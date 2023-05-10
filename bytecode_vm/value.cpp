@@ -2,6 +2,7 @@
 // Created by Johan Ericsson on 2023-04-17.
 //
 
+#include <cstring>
 #include "value.hpp"
 
 
@@ -31,6 +32,10 @@ bool operator==(const Value &v1, const Value &v2) {
             return true;
         case VAL_NUMBER:
             return v1.number_value() == v2.number_value();
+        case VAL_OBJ:
+            auto* str1 = v1.string();
+            auto* str2 = v2.string();
+            return str1->length==str2->length && (memcmp(str1->chars, str2->chars, str1->length)==0);
     }
 }
 
@@ -68,7 +73,18 @@ void print_value(Value value) {
             break;
         case VAL_NUMBER:
             //std::cout << "\t" << std::right << std::setw(5) << value.number_value() << std::endl;
-            std::cout << std::setw(5) << value.number_value();
+            std::cout << value.number_value();
+            break;
+        case VAL_OBJ:
+            print_object(value);
+            break;
+    }
+}
+
+void print_object(Value value) {
+    switch (value.object_type()) {
+        case OBJ_STRING:
+            std::cout << '"' << value.c_string() << '"';
             break;
     }
 }
