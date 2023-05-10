@@ -86,15 +86,16 @@ inline void Parser::error(const char* message) {
     error_reporter_.error(previous(), message);
 }
 
-
 void Parser::number() {
     Value val{strtod(previous().start, nullptr)};
     chunk_.add_constant(val, previous().line);
 }
+
 void Parser::string() {
     Value val{str_from_chars(previous().start+1, previous().length-2)};
     chunk_.add_constant(val, previous().line);
 }
+
 void Parser::grouping() {
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");

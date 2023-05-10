@@ -27,14 +27,6 @@ InterpretResult VirtualMachine::interpret(Chunk *chunk) {
         } \
     } while (false)
 
-#define BINARY_STR_CHECK() \
-    do { \
-        if (!stack_.peek(0).is_number() || !stack_.peek(1).is_number()) { \
-        runtime_error("Binary operation requires operands to be strings."); \
-        return INTERPRET_RUNTIME_ERROR; \
-        } \
-    } while (false)
-
 
 InterpretResult VirtualMachine::run() {
     for(;;) {
