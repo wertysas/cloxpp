@@ -50,6 +50,7 @@ public:
     inline const Token& current() const {return tokens_[current_];}
     inline const Token& next_token();
     void number();
+    void string();
     void grouping();
     void expression();
     void literal();
@@ -72,6 +73,7 @@ public:
     ParseRule parse_rules[40];
 
     void error(const char *message);
+
 };
 
 

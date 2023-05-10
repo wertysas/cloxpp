@@ -31,7 +31,7 @@ Parser::Parser(const std::vector<Token>& tokens,Chunk& chunk, ErrorReporter& err
         parse_rules[TOKEN_LESS]         = {nullptr,             &Parser::binary,    PREC_COMPARISON};
         parse_rules[TOKEN_LESS_EQUAL]   = {nullptr,             &Parser::binary,    PREC_COMPARISON};
         parse_rules[TOKEN_IDENTIFIER]   = {nullptr,             nullptr,            PREC_NONE};
-        parse_rules[TOKEN_STRING]       = {nullptr,             nullptr,            PREC_NONE};
+        parse_rules[TOKEN_STRING]       = {&Parser::string,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_NUMBER]       = {&Parser::number,     nullptr,            PREC_NONE};
         parse_rules[TOKEN_AND]          = {nullptr,             nullptr,            PREC_NONE};
         parse_rules[TOKEN_CLASS]        = {nullptr,             nullptr,            PREC_NONE};
@@ -91,7 +91,10 @@ void Parser::number() {
     Value val{strtod(previous().start, nullptr)};
     chunk_.add_constant(val, previous().line);
 }
-
+void Parser::string() {
+    Value val{str_from_chars(previous().start+1, previous().length-2)};
+    chunk_.add_constant(val, previous().line);
+}
 void Parser::grouping() {
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");

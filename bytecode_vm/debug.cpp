@@ -78,7 +78,7 @@ size_t constant_instruction(const Chunk &chunk, size_t offset) {
     uint8_t const_idx = chunk.opcodes[offset+1];
     Value val = chunk.constants[const_idx];
     std::cout << std::setw(16) << std::left <<"OP_CONSTANT " << "\t"
-    << std::right << std::setw(5) << static_cast<unsigned int>(const_idx);
+    << std::right << std::setw(5) << static_cast<unsigned int>(const_idx) << "\t";
     print_value(val);
     std::cout << std::endl;
     return offset+2;
@@ -90,7 +90,7 @@ size_t constant_instruction_long(const Chunk &chunk, size_t offset) {
     uint32_t const_idx = (b[0] | b[1] << 8 | b[2] << 16);
     Value val = chunk.constants[const_idx];
     std::cout << std::left << "OP_CONSTANT_LONG " << "\t"
-        << std::right << std::setw(5) << static_cast<unsigned int>(const_idx);
+        << std::right << std::setw(5) << static_cast<unsigned int>(const_idx) << "\t";
     print_value(val);
     std::cout << std::endl;
     return offset+4;

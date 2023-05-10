@@ -27,6 +27,15 @@ InterpretResult VirtualMachine::interpret(Chunk *chunk) {
         } \
     } while (false)
 
+#define BINARY_STR_CHECK() \
+    do { \
+        if (!stack_.peek(0).is_number() || !stack_.peek(1).is_number()) { \
+        runtime_error("Binary operation requires operands to be strings."); \
+        return INTERPRET_RUNTIME_ERROR; \
+        } \
+    } while (false)
+
+
 InterpretResult VirtualMachine::run() {
     for(;;) {
 #ifdef DEBUG_TRACE_EXECUTION
@@ -110,8 +119,15 @@ InterpretResult VirtualMachine::run() {
                 break;
             }
             case OP_ADD: {
-                BINARY_NUMBER_CHECK();
-                stack_.push(binary_add<Value>(stack_.pop(), stack_.pop()));
+                if (stack_.peek(0).is_number() && stack_.peek(1).is_number()) {
+                    stack_.push(stack_.pop() + stack_.pop());
+                } else if (stack_.peek(0).is_string() && stack_.peek(1).is_string()) {
+                    Value v2 = stack_.pop();
+                    Value v1 = stack_.pop();
+                    stack_.push(Value{concatenate(v1.string(), v2.string())});
+                } else {
+                    runtime_error("Binary '+' operands must be numbers or strings");
+                }
                 break;
             }
             case OP_SUBTRACT: {
@@ -156,7 +172,7 @@ void VirtualMachine::runtime_error(const char *fmt, ...) {
     size_t offset = ip - chunk_->opcodes.head()-1;
     uint line = line_number(*chunk_, offset);
     std::cerr << "[line " << line << "] in script" << std::endl;
-    stack_ .reset();
+    stack_.reset();
 }
 
 
