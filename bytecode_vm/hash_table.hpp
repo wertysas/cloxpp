@@ -19,6 +19,9 @@ public:
     HashTable() : count(0), capacity(0), entries(nullptr) {}
     void reset();
     void free_storage();
+    inline bool empty() const { return count == 0; }
+    inline uint size() const { return count; }
+    inline uint max_size() const { return capacity; }
 private:
     uint count;
     uint capacity;
