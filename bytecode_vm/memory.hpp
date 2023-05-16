@@ -12,30 +12,32 @@
 #define INIT_CAPACITY 8
 #define GROWTH_CONSTANT 2
 
-void* reallocate(void* ptr, size_t old_size, size_t new_size);
+void *reallocate(void *ptr, size_t old_size, size_t new_size);
 
 template<typename T>
-T* allocate(uint count) {
-    return reinterpret_cast<T*>(reallocate(nullptr, 0, sizeof(T)*count));
+T *allocate(uint count) {
+    return reinterpret_cast<T *>(reallocate(nullptr, 0, sizeof(T) * count));
 }
 
 
 struct Object;
+
 void free_objects();
+
 void free_object(Object *object);
 
 namespace memory {
 
-extern Object* objects;
+extern Object *objects;
 
 template<typename T>
-void free(void* ptr) {
+void free(void *ptr) {
     reallocate(ptr, sizeof(T), 0);
 }
 
 template<typename T>
-void free_array(void* ptr, size_t size) {
-    reallocate(ptr, sizeof(T)*size, 0);
+void free_array(void *ptr, size_t size) {
+    reallocate(ptr, sizeof(T) * size, 0);
 }
 
 }
