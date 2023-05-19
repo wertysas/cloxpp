@@ -34,3 +34,11 @@ set(SOURCE_FILES_VM
 
 # Add executable target with source files listed in SOURCE_FILES variable
 add_executable(cloxpp ${SOURCE_FILES_VM})
+
+set(SOURCE_FILES_MEMTEST
+        bytecode_vm/tests/doctest.h
+        bytecode_vm/tests/memory_tests.cpp
+        bytecode_vm/memory/memory_pool.cpp
+        bytecode_vm/memory/memory_pool.hpp bytecode_vm/memory/mem_common.hpp bytecode_vm/memory/allocator.cpp)
+
+add_executable(memory_test ${SOURCE_FILES_MEMTEST})
