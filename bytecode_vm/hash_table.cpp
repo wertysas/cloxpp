@@ -16,3 +16,15 @@ void HashTable::free_storage() {
     reset();
 }
 
+void HashTable::insert(HashType key, Value value) {
+    TableEntry entry;
+}
+
+TableEntry* HashTable::find(HashType key) {
+    uint idx = key % capacity;
+    for(;;) {
+        TableEntry* entry = &entries[idx];
+        if (entry) {}
+    }
+}
+

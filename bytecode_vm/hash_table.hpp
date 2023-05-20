@@ -10,18 +10,21 @@
 #include "value.hpp"
 
 struct TableEntry {
-    StringObject* key;
+    HashType key;
     Value value;
 };
 
 class HashTable {
 public:
-    HashTable() : count(0), capacity(0), entries(nullptr) {}
+    void insert(HashType key, Value value);
+    bool contains(HashType key);
+    TableEntry* find(HashType key);
     void reset();
     void free_storage();
     inline bool empty() const { return count == 0; }
     inline uint size() const { return count; }
     inline uint max_size() const { return capacity; }
+    HashTable() : count(0), capacity(0), entries(nullptr) {}
 private:
     uint count;
     uint capacity;

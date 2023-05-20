@@ -35,6 +35,7 @@ StringObject* move_string(StringObject *str) {
     return allocate_string(str->chars, str->length, str->hash);
 }
 
+// FNV-1a
 HashType hash_string(const char *str, uint length) {
     uint32_t hash = 2166136261u;
     for (int i = 0; i < length; i++) {

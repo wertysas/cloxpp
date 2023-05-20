@@ -47,6 +47,7 @@ StringObject* allocate_string(char* chars, uint length, HashType hash);
 StringObject* concatenate(StringObject* str1, StringObject* str2);
 StringObject* move_string(StringObject* str);
 
+// FNV-1a
 HashType hash_string(const char* str, uint length);
 
 #endif //CLOXPP_OBJECT_HPP
