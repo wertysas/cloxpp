@@ -30,7 +30,7 @@ set(SOURCE_FILES_VM
         bytecode_vm/parser.cpp
         bytecode_vm/error_handling.hpp
         bytecode_vm/error_handling.cpp
-        bytecode_vm/object.cpp bytecode_vm/object.hpp bytecode_vm/hash_table.cpp bytecode_vm/hash_table.hpp)
+        bytecode_vm/object.cpp bytecode_vm/object.hpp bytecode_vm/hash_table.hpp)
 
 # Add executable target with source files listed in SOURCE_FILES variable
 add_executable(cloxpp ${SOURCE_FILES_VM})

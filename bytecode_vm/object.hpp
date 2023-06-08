@@ -50,4 +50,8 @@ StringObject* move_string(StringObject* str);
 // FNV-1a
 HashType hash_string(const char* str, uint length);
 
+struct StringHash {
+ HashType operator()(const StringObject& s) const { return s.hash; }
+};
+
 #endif //CLOXPP_OBJECT_HPP
