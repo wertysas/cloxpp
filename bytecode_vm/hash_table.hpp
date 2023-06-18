@@ -77,7 +77,7 @@ struct TableEntry<Key, T, std::enable_if_t<std::is_pointer_v<Key>>> {
         key = table_entry.key;
         if (key == nullptr) {    // unused or tombstone
             tombstone = table_entry.tombstone;
-        } else {    // used
+        } else {                 // used
             value = table_entry.value;
         }
     }
@@ -115,6 +115,7 @@ class HashTable : public A {    // note, we inherit from allocator for EBCO
     inline bool has_capacity( ) const {
         return (count_ + 1 < capacity_ * HASH_TABLE_MAX_LOAD);
     }
+    inline bool empty() { return count_ == 0; }
 
     // Lookup and element insertion/deletion
     void insert(const entry_type& entry);    // inserts element
@@ -156,17 +157,16 @@ void HashTable<Key, T, Hash, A>::erase(const HashTable::key_type& key) {
 
 template<typename Key, typename T, typename Hash, typename A>
 bool HashTable<Key, T, Hash, A>::contains(const Key& key) {
+    if (empty( ))
+        return false;
     return find(key).type( ) == EntryType::USED;
 }
 
 
-// Remark
+// How to handle when key is  a "bad value"
 template<typename Key, typename T, typename Hash, typename A>
 TableEntry<Key, T>& HashTable<Key, T, Hash, A>::find(Key const& key) const {
-    // size_t idx = Hash{ }(key) % capacity_;    // TODO: maybe switch 2 fibonacci
-    std::cout << "key" << key << std::endl;
-    size_t idx = key % capacity_;    // TODO: maybe switch 2 fibonacci
-
+    size_t idx = Hash{ }(key) % capacity_;    // TODO: maybe switch 2 fibonacci
     entry_type* tombstone = nullptr;
     for (;;) {
         entry_type* entry = &entries_[idx];
@@ -207,7 +207,7 @@ void HashTable<Key, T, Hash, A>::resize_table( ) {
         entries[i] = entry_type( );
     }
 
-    for (uint i = 0; i < capacity_; ++i) {
+    for (uint i = 0; i < old_capacity_; ++i) {
         entry_type& entry = entries_[i];
         if constexpr (std::is_pointer_v<key_type>) {
             if (entry.key == nullptr)
