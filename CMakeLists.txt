@@ -3,7 +3,9 @@ project(cloxpp)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+add_subdirectory(tests)
 
+# cloxpp is the bytecode intepreter
 set(SOURCE_FILES_VM
         bytecode_vm/main.cpp
         bytecode_vm/chunk.cpp
@@ -32,5 +34,4 @@ set(SOURCE_FILES_VM
         bytecode_vm/error_handling.cpp
         bytecode_vm/object.cpp bytecode_vm/object.hpp bytecode_vm/hash_table.hpp)
 
-# Add executable target with source files listed in SOURCE_FILES variable
 add_executable(cloxpp ${SOURCE_FILES_VM})
