@@ -12,8 +12,8 @@
 #include "common.hpp"
 #include "value.hpp"
 
-#define HASH_TABLE_MAX_LOAD 0.75      // TODO: move to template parameter?
-#define HASH_TABLE_GROWTH_FACTOR 2    // TODO: move to template parameter?
+#define HASH_TABLE_MAX_LOAD 0.75
+#define HASH_TABLE_GROWTH_FACTOR 2
 #define HASH_TABLE_DEFAULT_SIZE 128
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ class HashTable : public A {    // note, we inherit from allocator for EBCO
     using allocator_type = A;
 
     // ctors and memory modifying behaviour
-    HashTable( ) : count_(0), capacity_(0), entries_(nullptr) {}
+    HashTable( ) : count_(0), capacity_(0), entries_(nullptr) { resize_table(); }
     ~HashTable( ) { A::deallocate(entries_, capacity_); }
     void reset(size_t size = HASH_TABLE_DEFAULT_SIZE);
     void free_storage( );
@@ -166,7 +166,7 @@ bool HashTable<Key, T, Hash, A>::contains(const Key& key) {
 // How to handle when key is  a "bad value"
 template<typename Key, typename T, typename Hash, typename A>
 TableEntry<Key, T>& HashTable<Key, T, Hash, A>::find(Key const& key) const {
-    size_t idx = Hash{ }(key) % capacity_;    // TODO: maybe switch 2 fibonacci
+    size_t idx = Hash{ }(key) % capacity_; // possibly switch 2 fibonacci
     entry_type* tombstone = nullptr;
     for (;;) {
         entry_type* entry = &entries_[idx];
@@ -180,7 +180,7 @@ TableEntry<Key, T>& HashTable<Key, T, Hash, A>::find(Key const& key) const {
         if (tombstone == nullptr) {    // else we have a tombstone
             tombstone == entry;
         }
-        idx = (idx + 1) % capacity_;    // FIXME: modulo inside "hot" for loop
+        idx = (idx + 1) % capacity_; // possible optimization (mod in hot loop)
     }
 }
 
@@ -214,8 +214,8 @@ void HashTable<Key, T, Hash, A>::resize_table( ) {
                 continue;
         }
         if constexpr (std::is_pointer_v<key_type>) {
-            if (entry.type_ == EntryType::EMPTY ||
-                entry.type == EntryType::TOMBSTONE)
+            if (entry.type() == EntryType::EMPTY ||
+                entry.type() == EntryType::TOMBSTONE)
                 continue;
         }
         entry_type dest = find(entry.key);
