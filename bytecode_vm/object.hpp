@@ -19,16 +19,7 @@ struct Object {
     Object* next;
 };
 
-// The layout of members could possibly be optimized
-// NOTE HOWEVER: Object must be 1st member since we often reinterpret_cast Obj/StrObj
-// FIXME: REPLACE with inehritance hierarchy if possible, e.g.
-//struct StringObject : Object {
-//   size_t length;
-//   char* chars;
-//};
-
-struct StringObject {
-    Object object;
+struct StringObject : public Object {
     size_t length;
     char* chars;
     uint32_t hash; // implement through mixin/CRTP?

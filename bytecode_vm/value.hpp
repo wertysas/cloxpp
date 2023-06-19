@@ -30,7 +30,7 @@ class Value {
     Value(double number) : value_type_(VAL_NUMBER), value_() { value_.number=number; }
     Value(Object* obj) : value_type_(VAL_OBJ), value_() { value_.obj=obj; }
     Value(StringObject* string_obj) : value_type_(VAL_OBJ), value_() {
-        value_.obj=reinterpret_cast<Object*>(string_obj);
+        value_.obj=static_cast<Object*>(string_obj);
     }
     // ValueType accessors
     inline bool bool_value() const { return value_.boolean; }
@@ -50,8 +50,8 @@ class Value {
 
     // String functions
     inline bool is_string() const { return is_object_type(OBJ_STRING); }
-    inline StringObject* string() const { return reinterpret_cast<StringObject*>(value_.obj); }
-    inline char* c_string() { return reinterpret_cast<StringObject*>(value_.obj)->chars; }
+    inline StringObject* string() const { return static_cast<StringObject*>(value_.obj); }
+    inline char* c_string() { return static_cast<StringObject*>(value_.obj)->chars; }
 
     // Binary Operators
     friend Value operator+(const Value& v1, const Value& v2);
