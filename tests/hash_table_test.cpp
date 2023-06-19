@@ -51,7 +51,97 @@ void Mallocator<T>::deallocate(T* const p, size_t) const noexcept {
     free(p);
 }
 
-TEST_CASE("Non Pointer Type Hash Table") {
+
+struct HashableObj {
+    uint hash = 0;
+};
+
+struct HashableObjPointerHash {
+    uint operator()(HashableObj* hobj) {
+        return hobj->hash;
+    }
+};
+
+
+TEST_CASE("Non Pointer Type Hash Table With Default Hash") {
+    HashTable<int, int, std::hash<int>>
+        table{ };
+    SUBCASE("insertion") {
+        table.insert(1, 1);
+        table.insert(2, 2);
+    }
+
+    SUBCASE("contains") {
+        table.insert(1, 1);
+        table.insert(2, 2);
+        REQUIRE(table.contains(1));
+        REQUIRE(table.contains(2));
+    }
+
+    SUBCASE("accessing elements") {
+        table.insert(1, 1);
+        table.insert(2, 2);
+        REQUIRE(table[1].value == 1);
+        REQUIRE(table[2].value == 2);
+    }
+    SUBCASE("entry type status") {
+        table.insert(1, 1);
+        table.insert(2, 2);
+        for (auto entry: table) {
+            if (entry.key == 1 || entry.key == 2) {
+                REQUIRE(entry.type( ) == EntryType::USED);
+            } else {
+                REQUIRE(entry.type( ) == EntryType::EMPTY);
+            }
+        }
+    }
+}
+
+TEST_CASE("Pointer Type Hash Table With Default Hash") {
+    HashTable<HashableObj*, int, HashableObjPointerHash>
+        table{ };
+    SUBCASE("insertion") {
+        HashableObj h1 = {1};
+        HashableObj h2 = {2};
+        table.insert(&h1, 1);
+        table.insert(&h2, 2);
+    }
+
+    SUBCASE("contains") {
+        HashableObj h1 = {1};
+        HashableObj h2 = {2};
+        HashableObj h3 = {2};
+        table.insert(&h1, 1);
+        table.insert(&h2, 2);
+        REQUIRE(table.contains(&h1));
+        REQUIRE(table.contains(&h2));
+        REQUIRE(table.contains(&h3));
+    }
+
+    SUBCASE("accessing elements") {
+        HashableObj h1 = {1};
+        HashableObj h2 = {2};
+        table.insert(&h1, 1);
+        table.insert(&h2, 2);
+        REQUIRE(table[&h1].value == 1);
+        REQUIRE(table[&h2].value == 2);
+    }
+    SUBCASE("entry type status") {
+        HashableObj h1 = {1};
+        HashableObj h2 = {2};
+        table.insert(&h1, 1);
+        table.insert(&h2, 2);
+        for (auto entry: table) {
+            if (entry.key == &h1 || entry.key == &h2) {
+                REQUIRE(entry.type( ) == EntryType::USED);
+            } else {
+                REQUIRE(entry.type( ) == EntryType::EMPTY);
+            }
+        }
+    }
+}
+
+TEST_CASE("Non Pointer Type Hash Table With Mallocator") {
     HashTable<int, int, std::hash<int>, Mallocator<TableEntry<int, int>>>
         table{ };
     SUBCASE("insertion") {
