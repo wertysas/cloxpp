@@ -18,7 +18,7 @@ InterpretResult VirtualMachine::interpret(Chunk *chunk) {
 // we use a macro for readability and to force inlining
 #define READ_BYTE() (*ip++)
 #define READ_CONSTANT() (chunk_->constants[static_cast<uint8_t>(READ_BYTE())])
-// MACROS for type checks 2 force inlining
+// MACROS for type_ checks 2 force inlining
 #define BINARY_NUMBER_CHECK() \
     do { \
         if (!stack_.peek(0).is_number() || !stack_.peek(1).is_number()) { \

@@ -40,7 +40,7 @@ class Value {
     inline  Object* object_value() const { return value_.obj; } // note this returns a pointer!
     inline ObjectType object_type() const { return value_.obj->type; }
 
-    // Value type checks
+    // Value type_ checks
     inline ValueType value_type() const { return value_type_; }
     inline bool is_number() const { return value_type_==VAL_NUMBER; }
     inline bool is_bool() const { return value_type_==VAL_BOOL; }
@@ -60,8 +60,8 @@ class Value {
     friend Value operator*(const Value& v1, const Value& v2);
     friend bool operator==(const Value& v1, const Value& v2);
     friend bool operator!=(const Value& v1, const Value& v2);
-    // The 4 comparison operators <, <=, >, >= assumes numeric value type
-    // However this type check is done in the runtime of the VM
+    // The 4 comparison operators <, <=, >, >= assumes numeric value type_
+    // However this type_ check is done in the runtime of the VM
     friend bool operator<(const Value& v1, const Value& v2);
     friend bool operator<=(const Value& v1, const Value& v2);
     friend bool operator>(const Value& v1, const Value& v2);
@@ -78,7 +78,7 @@ private:
 void print_value(Value value);
 
 // Checks whether a Value is falsy, i.e. considered false in a boolean context
-// In Lox nil and false are the only falsy values every other value/type evaluates to true.
+// In Lox nil and false are the only falsy values every other value/type_ evaluates to true.
 bool check_falsiness(Value value);
 
 
