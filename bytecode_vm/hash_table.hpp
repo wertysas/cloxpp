@@ -87,6 +87,7 @@ struct TableEntry<Key, T, std::enable_if_t<std::is_pointer_v<Key>>> {
 template<typename Key,
          typename T,
          typename Hash = std::hash<Key>,
+         typename KeyEqual = std::equal_to<Key>,
          typename A = std::allocator<TableEntry<Key, T>>>
 class HashTable : public A {    // note, we inherit from allocator for EBCO
     public:
@@ -136,8 +137,8 @@ class HashTable : public A {    // note, we inherit from allocator for EBCO
     TableEntry<Key, T>* entries_;
 };
 
-template<typename Key, typename T, typename Hash, typename A>
-void HashTable<Key, T, Hash, A>::insert(const entry_type& entry) {
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
+void HashTable<Key, T, Hash, KeyEqual, A>::insert(const entry_type& entry) {
     if (!has_capacity( ))    // check if table needs 2 grow
         resize_table( );
 
@@ -147,16 +148,16 @@ void HashTable<Key, T, Hash, A>::insert(const entry_type& entry) {
     entry_ = entry;    // default copy assignment operator
 }
 
-template<typename Key, typename T, typename Hash, typename A>
-void HashTable<Key, T, Hash, A>::erase(const HashTable::key_type& key) {
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
+void HashTable<Key, T, Hash, KeyEqual, A>::erase(const HashTable::key_type& key) {
     entry_type entry = find(key);
     if (entry.type( ) != EntryType::USED)
         return;
     entry.set_deleted( );
 }
 
-template<typename Key, typename T, typename Hash, typename A>
-bool HashTable<Key, T, Hash, A>::contains(const Key& key) {
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
+bool HashTable<Key, T, Hash, KeyEqual, A>::contains(const Key& key) {
     if (empty( ))
         return false;
     return find(key).type( ) == EntryType::USED;
@@ -164,14 +165,14 @@ bool HashTable<Key, T, Hash, A>::contains(const Key& key) {
 
 
 // How to handle when key is  a "bad value"
-template<typename Key, typename T, typename Hash, typename A>
-TableEntry<Key, T>& HashTable<Key, T, Hash, A>::find(Key const& key) const {
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
+TableEntry<Key, T>& HashTable<Key, T, Hash, KeyEqual, A>::find(Key const& key) const {
     size_t idx = Hash{ }(key) % capacity_; // possibly switch 2 fibonacci
     entry_type* tombstone = nullptr;
     for (;;) {
         entry_type* entry = &entries_[idx];
         EntryType type = entry->type( );
-        if (type == EntryType::USED) {
+        if (type == EntryType::USED && KeyEqual{}(entry->key, key) ) {
             return *entry;
         } else if (type ==
                    EntryType::EMPTY) {    // return previous tombstone or entry
@@ -184,21 +185,21 @@ TableEntry<Key, T>& HashTable<Key, T, Hash, A>::find(Key const& key) const {
     }
 }
 
-template<typename Key, typename T, typename Hash, typename A>
-void HashTable<Key, T, Hash, A>::reset(size_t size) {
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
+void HashTable<Key, T, Hash, KeyEqual, A>::reset(size_t size) {
     A::deallocate(entries_, capacity_);
     count_ = 0;
     capacity_ = size;
     entries_ = A::allocate(size);
 }
 
-template<typename Key, typename T, typename Hash, typename A>
-void HashTable<Key, T, Hash, A>::free_storage( ) {
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
+void HashTable<Key, T, Hash, KeyEqual, A>::free_storage( ) {
     memory::free_array<TableEntry>(entries_, capacity_);
     reset( );
 }
-template<typename Key, typename T, typename Hash, typename A>
-void HashTable<Key, T, Hash, A>::resize_table( ) {
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
+void HashTable<Key, T, Hash, KeyEqual, A>::resize_table( ) {
     size_t old_capacity_ = capacity_;
     capacity_ = (capacity_ == 0) ? HASH_TABLE_DEFAULT_SIZE
                                  : capacity_ * HASH_TABLE_GROWTH_FACTOR;
@@ -225,8 +226,8 @@ void HashTable<Key, T, Hash, A>::resize_table( ) {
     A::deallocate(entries_, old_capacity_);
     entries_ = entries;
 }
-template<typename Key, typename T, typename Hash, typename A>
-void HashTable<Key, T, Hash, A>::operator+=(const HashTable& other) {
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
+void HashTable<Key, T, Hash, KeyEqual, A>::operator+=(const HashTable& other) {
     for (entry_type entry: other) {
         insert(entry);
     }

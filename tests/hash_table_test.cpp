@@ -115,7 +115,7 @@ TEST_CASE("Pointer Type Hash Table With Default Hash") {
         table.insert(&h2, 2);
         REQUIRE(table.contains(&h1));
         REQUIRE(table.contains(&h2));
-        REQUIRE(table.contains(&h3));
+        REQUIRE(!table.contains(&h3));
     }
 
     SUBCASE("accessing elements") {
@@ -142,7 +142,7 @@ TEST_CASE("Pointer Type Hash Table With Default Hash") {
 }
 
 TEST_CASE("Non Pointer Type Hash Table With Mallocator") {
-    HashTable<int, int, std::hash<int>, Mallocator<TableEntry<int, int>>>
+    HashTable<int, int, std::hash<int>, std::equal_to<int>, Mallocator<TableEntry<int, int>>>
         table{ };
     SUBCASE("insertion") {
         table.insert(1, 1);
