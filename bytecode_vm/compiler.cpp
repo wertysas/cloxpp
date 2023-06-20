@@ -25,8 +25,8 @@ bool compile(const string &source, Chunk& bytecode) {
     ErrorReporter error_reporter{};
     Parser parser(tokens, bytecode, error_reporter);
     //parser.advance();
-    parser.expression();
-    parser.consume(TOKEN_EOF, "Expect end of expression.");
+    parser.parse_tokens();
+    //parser.consume(TOKEN_EOF, "Expect end of expression.");
     bytecode.add_opcode(OP_RETURN, 1000);
 
     // end_compiler()

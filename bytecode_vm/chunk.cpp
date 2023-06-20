@@ -19,7 +19,7 @@ void Chunk::add_opcode(OpCode opcode, uint line) {
     }
 }
 
-void Chunk::add_constant(Value constant, uint line) {
+uint Chunk::add_constant(Value constant, uint line) {
     uint32_t idx = constants.idx_append(constant);
     if (idx < UINT8_MAX) {
         add_opcode(OP_CONSTANT, line);
@@ -33,9 +33,5 @@ void Chunk::add_constant(Value constant, uint line) {
         opcodes.append(indices[1]);
         opcodes.append(indices[2]);
     }
-
+    return idx;
 }
-
-
-
-

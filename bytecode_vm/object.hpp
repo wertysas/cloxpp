@@ -48,7 +48,7 @@ StringObject* move_string(StringObject* str);
 HashType hash_string(const char* str, uint length);
 
 struct StringHash {
- HashType operator()(const StringObject& s) const { return s.hash; }
+ constexpr HashType operator()(StringObject* s) const { return s->hash; }
 };
 
 #endif //CLOXPP_OBJECT_HPP

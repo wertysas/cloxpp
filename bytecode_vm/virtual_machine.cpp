@@ -8,166 +8,212 @@
 #include "binary_operators.hpp"
 #include "virtual_machine.hpp"
 
-InterpretResult VirtualMachine::interpret(Chunk *chunk) {
+InterpretResult VirtualMachine::interpret(Chunk* chunk) {
     chunk_ = chunk;
-    ip = chunk_->opcodes.head();
-    return run();
+    ip = chunk_->opcodes.head( );
+    return run( );
 }
 
 // Macro for reading bytes with instruction pointer
 // we use a macro for readability and to force inlining
-#define READ_BYTE() (*ip++)
-#define READ_CONSTANT() (chunk_->constants[static_cast<uint8_t>(READ_BYTE())])
+#define READ_BYTE( ) (*ip++)
+#define READ_CONSTANT( ) (chunk_->constants[static_cast<uint8_t>(READ_BYTE( ))])
 // MACROS for type_ checks 2 force inlining
-#define BINARY_NUMBER_CHECK() \
-    do { \
-        if (!stack_.peek(0).is_number() || !stack_.peek(1).is_number()) { \
-        runtime_error("Numeric binary operation requires operands to be numbers."); \
-        return INTERPRET_RUNTIME_ERROR; \
-        } \
+#define BINARY_NUMBER_CHECK( )                                                \
+    do {                                                                      \
+        if (!stack_.peek(0).is_number( ) || !stack_.peek(1).is_number( )) {   \
+            runtime_error(                                                    \
+                "Numeric binary operation requires operands to be numbers."); \
+            return INTERPRET_RUNTIME_ERROR;                                   \
+        }                                                                     \
     } while (false)
 
 
-InterpretResult VirtualMachine::run() {
-    for(;;) {
+InterpretResult VirtualMachine::run( ) {
+    for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
         std::cout << "STACK:" << std ::endl;
-        for (Value* slot = stack_.top(); slot>stack_.first();) {
+        for (Value* slot = stack_.top( ); slot > stack_.first( );) {
             std::cout << "[ ";
             print_value(*(--slot));
             std::cout << " ]" << std::endl;
         }
         std::cout << "**********NEXT INSTRUCTION***************" << std ::endl;
-        disassemble_instruction(*chunk_, static_cast<int>(ip-chunk_->opcodes.head()));
+        disassemble_instruction(*chunk_,
+                                static_cast<int>(ip - chunk_->opcodes.head( )));
 #endif
-        switch(READ_BYTE()) {
-            case OP_CONSTANT: {
-                Value constant = READ_CONSTANT();
-                stack_.push(constant);
-                break;
-            }
-            case OP_CONSTANT_LONG: {
-                uint32_t const_idx = constant_long_idx(ip);
-                ip += 3;
-                Value constant = chunk_->constants[const_idx];
-                stack_.push(constant);
-                break;
-            }
-            case OP_NIL:
-                stack_.push(Value());
-                break;
-            case OP_TRUE:
-                stack_.push(Value(true));
-                break;
-            case OP_FALSE:
-                stack_.push(Value(false));
-                break;
-            case OP_NOT:
-                stack_.push(Value(check_falsiness(stack_.pop())));
-                break;
-            case OP_EQUAL:
-                //  COMMUTATIVE
-                stack_.push(Value(stack_.pop()==stack_.pop()));
-                break;
-            case OP_NOT_EQUAL:
-                //  COMMUTATIVE
-                stack_.push(Value(stack_.pop()!=stack_.pop()));
-                break;
-            case OP_GREATER: {
-                BINARY_NUMBER_CHECK(); // only for numbers
-                Value v2 = stack_.pop();
-                Value v1 = stack_.pop();
-                stack_.push(Value(v1>v2));
-                break;
-            };
-            case OP_GREATER_EQUAL: {
-                BINARY_NUMBER_CHECK(); // only for numbers
-                Value v2 = stack_.pop();
-                Value v1 = stack_.pop();
-                stack_.push(Value(v1>=v2));
-                break;
-            };
-            case OP_LESS: {
-                BINARY_NUMBER_CHECK(); // only for numbers
-                Value v2 = stack_.pop();
-                Value v1 = stack_.pop();
-                stack_.push(Value(v1<v2));
-                break;
-            };
-            case OP_LESS_EQUAL: {
-                BINARY_NUMBER_CHECK(); // only for numbers
-                Value v2 = stack_.pop();
-                Value v1 = stack_.pop();
-                stack_.push(Value(v1<=v2));
-                break;
-            };
+        switch (READ_BYTE( )) {
+        case OP_CONSTANT: {
+            Value constant = READ_CONSTANT( );
+            stack_.push(constant);
+            break;
+        }
+        case OP_CONSTANT_LONG: {
+            uint32_t const_idx = constant_long_idx(ip);
+            ip += 3;
+            Value constant = chunk_->constants[const_idx];
+            stack_.push(constant);
+            break;
+        }
+        case OP_NIL:
+            stack_.push(Value( ));
+            break;
+        case OP_TRUE:
+            stack_.push(Value(true));
+            break;
+        case OP_FALSE:
+            stack_.push(Value(false));
+            break;
+        case OP_NOT:
+            stack_.push(Value(check_falsiness(stack_.pop( ))));
+            break;
+        case OP_EQUAL:
+            //  COMMUTATIVE
+            stack_.push(Value(stack_.pop( ) == stack_.pop( )));
+            break;
+        case OP_NOT_EQUAL:
+            //  COMMUTATIVE
+            stack_.push(Value(stack_.pop( ) != stack_.pop( )));
+            break;
+        case OP_GREATER: {
+            BINARY_NUMBER_CHECK( );    // only for numbers
+            Value v2 = stack_.pop( );
+            Value v1 = stack_.pop( );
+            stack_.push(Value(v1 > v2));
+            break;
+        };
+        case OP_GREATER_EQUAL: {
+            BINARY_NUMBER_CHECK( );    // only for numbers
+            Value v2 = stack_.pop( );
+            Value v1 = stack_.pop( );
+            stack_.push(Value(v1 >= v2));
+            break;
+        };
+        case OP_LESS: {
+            BINARY_NUMBER_CHECK( );    // only for numbers
+            Value v2 = stack_.pop( );
+            Value v1 = stack_.pop( );
+            stack_.push(Value(v1 < v2));
+            break;
+        };
+        case OP_LESS_EQUAL: {
+            BINARY_NUMBER_CHECK( );    // only for numbers
+            Value v2 = stack_.pop( );
+            Value v1 = stack_.pop( );
+            stack_.push(Value(v1 <= v2));
+            break;
+        };
 
-            case OP_NEGATE: {
-                if (!stack_.peek(0).is_number()) {
-                    runtime_error("Operand must be a number.");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-                stack_.push(-stack_.pop().number_value());
-                break;
+        case OP_NEGATE: {
+            if (!stack_.peek(0).is_number( )) {
+                runtime_error("Operand must be a number.");
+                return INTERPRET_RUNTIME_ERROR;
             }
-            case OP_ADD: {
-                if (stack_.peek(0).is_number() && stack_.peek(1).is_number()) {
-                    stack_.push(stack_.pop() + stack_.pop());
-                } else if (stack_.peek(0).is_string() && stack_.peek(1).is_string()) {
-                    Value v2 = stack_.pop();
-                    Value v1 = stack_.pop();
-                    stack_.push(Value{concatenate(v1.string(), v2.string())});
-                } else {
-                    runtime_error("Binary '+' operands must be numbers or strings");
-                }
-                break;
+            stack_.push(-stack_.pop( ).number_value( ));
+            break;
+        }
+        case OP_POP: {
+            stack_.pop( );
+            break;
+        }
+        case OP_DEFINE_GLOBAL: {
+            StringObject* name = READ_CONSTANT( ).string( );
+            global_table_.insert(name, stack_.peek(0));
+            stack_.pop( );    // late pop, GC related
+            break;
+        }
+        case OP_DEFINE_GLOBAL_LONG: {
+            uint32_t const_idx = constant_long_idx(ip);
+            ip += 3;
+            StringObject* name = chunk_->constants[const_idx].string( );
+            global_table_.insert(name, stack_.peek(0));
+            stack_.pop( );    // late pop GC related
+            break;
+        }
+        case OP_GET_GLOBAL: {
+            StringObject* name = READ_CONSTANT( ).string( );
+            table_entry& entry = global_table_.find(name);
+            if (entry.type( ) != EntryType::USED) {
+                runtime_error("Undefined variable '%s'.", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
             }
-            case OP_SUBTRACT: {
-                BINARY_NUMBER_CHECK();
-                stack_.push(binary_subtract<Value>(stack_.pop(), stack_.pop()));
-                break;
+            stack_.push(entry.value);
+            break;
+        }
+        case OP_GET_GLOBAL_LONG: {
+            uint32_t const_idx = constant_long_idx(ip);
+            ip += 3;
+            StringObject* name = chunk_->constants[const_idx].string( );
+            table_entry& entry = global_table_.find(name);
+            if (entry.type( ) != EntryType::USED) {
+                runtime_error("Undefine variabel '%s'.", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
             }
-            case OP_MULTIPLY: {
-                BINARY_NUMBER_CHECK();
-                Value v2 = stack_.pop();
-                Value v1 = stack_.pop();
-                stack_.push(binary_multiply<Value>(v1, v2));
-                //stack_.push(binary_multiply<Value>(stack_.pop(), stack_.pop()));
-                break;
+            stack_.push(entry.value);
+            break;
+        }
+        case OP_ADD: {
+            if (stack_.peek(0).is_number( ) && stack_.peek(1).is_number( )) {
+                stack_.push(stack_.pop( ) + stack_.pop( ));
+            } else if (stack_.peek(0).is_string( ) &&
+                       stack_.peek(1).is_string( )) {
+                Value v2 = stack_.pop( );
+                Value v1 = stack_.pop( );
+                stack_.push(Value{concatenate(v1.string( ), v2.string( ))});
+            } else {
+                runtime_error("Binary '+' operands must be numbers or strings");
             }
-            case OP_DIVIDE: {
-                BINARY_NUMBER_CHECK();
-                // DIVISION  IS NONCOMMUTATIVE and it's not defined which function in
-                // the parameters below is called first. Hence we introduce local vars
-                // stack_.push(binary_divide<Value>(stack_.pop(), stack_.pop()));
-                Value denom = stack_.pop();
-                Value num = stack_.pop();
-                stack_.push(binary_divide<Value>(num, denom));
-                break;
-            }
-            case OP_RETURN: {
-                print_value(stack_.pop());
-                std::cout << std::endl;
-                return INTERPRET_SUCCESS;
-            }
+            break;
+        }
+        case OP_SUBTRACT: {
+            BINARY_NUMBER_CHECK( );
+            stack_.push(binary_subtract<Value>(stack_.pop( ), stack_.pop( )));
+            break;
+        }
+        case OP_MULTIPLY: {
+            BINARY_NUMBER_CHECK( );
+            Value v2 = stack_.pop( );
+            Value v1 = stack_.pop( );
+            stack_.push(binary_multiply<Value>(v1, v2));
+            // stack_.push(binary_multiply<Value>(stack_.pop(), stack_.pop()));
+            break;
+        }
+        case OP_DIVIDE: {
+            BINARY_NUMBER_CHECK( );
+            // DIVISION  IS NONCOMMUTATIVE and it's not defined which function
+            // in the parameters below is called first. Hence we introduce local
+            // vars stack_.push(binary_divide<Value>(stack_.pop(),
+            // stack_.pop()));
+            Value denom = stack_.pop( );
+            Value num = stack_.pop( );
+            stack_.push(binary_divide<Value>(num, denom));
+            break;
+        }
+        case OP_PRINT: {
+            print_value(stack_.pop( ));
+            std::cout << std::endl;
+            break;
+        }
+        case OP_RETURN: {
+            return INTERPRET_SUCCESS;
+        }
         }
     }
 }
 
-void VirtualMachine::runtime_error(const char *fmt, ...) {
+void VirtualMachine::runtime_error(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
     vfprintf(stderr, fmt, args);
     va_end(args);
     fputs("\n", stderr);
 
-    size_t offset = ip - chunk_->opcodes.head()-1;
+    size_t offset = ip - chunk_->opcodes.head( ) - 1;
     uint line = line_number(*chunk_, offset);
     std::cerr << "[line " << line << "] in script" << std::endl;
-    stack_.reset();
+    stack_.reset( );
 }
 
 
 #undef READ_BYTE
 #undef READ_CONSTANT
-
