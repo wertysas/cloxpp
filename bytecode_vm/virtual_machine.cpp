@@ -132,8 +132,8 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_GET_GLOBAL: {
             StringObject* name = READ_CONSTANT( ).string( );
-            table_entry& entry = global_table_.find(name);
-            if (entry.type( ) != EntryType::USED) {
+            entry_type& entry = global_table_.find(name);
+            if (entry.type( ) != EntryType::USED) { // contains
                 runtime_error("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
@@ -144,12 +144,34 @@ InterpretResult VirtualMachine::run( ) {
             uint32_t const_idx = constant_long_idx(ip);
             ip += 3;
             StringObject* name = chunk_->constants[const_idx].string( );
-            table_entry& entry = global_table_.find(name);
+            entry_type& entry = global_table_.find(name);
             if (entry.type( ) != EntryType::USED) {
-                runtime_error("Undefine variabel '%s'.", name->chars);
+                runtime_error("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
             stack_.push(entry.value);
+            break;
+        }
+        case OP_SET_GLOBAL: {
+            StringObject* name = READ_CONSTANT( ).string( );
+            entry_type& entry = global_table_.find(name);
+            if (entry.type( ) != EntryType::USED) {
+                runtime_error("Undefined variable '%s'.", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            entry.value = stack_.peek(0);
+            break;
+        }
+        case OP_SET_GLOBAL_LONG: {
+            uint32_t const_idx = constant_long_idx(ip);
+            ip += 3;
+            StringObject* name = chunk_->constants[const_idx].string( );
+            entry_type& entry = global_table_.find(name);
+            if (entry.type( ) != EntryType::USED) {
+                runtime_error("Undefined variable '%s'.", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            entry.value = stack_.peek(0);
             break;
         }
         case OP_ADD: {

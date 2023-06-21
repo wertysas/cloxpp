@@ -92,22 +92,49 @@ inline void Parser::error(const char* message) {
     error_reporter_.error(previous( ), message);
 }
 
-void Parser::number( ) {
+void Parser::number(bool assignable) {
     Value val{strtod(previous( ).start, nullptr)};
     chunk_.add_constant(val, previous( ).line);
 }
 
-void Parser::string( ) {
+void Parser::string(bool assignable) {
     Value val{str_from_chars(previous( ).start + 1, previous( ).length - 2)};
     chunk_.add_constant(val, previous( ).line);
 }
 
-void Parser::grouping( ) {
+void Parser::grouping(bool assignable) {
     expression( );
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-void Parser::unary( ) {
+void Parser::literal(bool assignable) {
+    switch (previous( ).type) {
+    case TOKEN_FALSE:
+        emit_byte(OP_FALSE);
+        break;
+    case TOKEN_NIL:
+        emit_byte(OP_NIL);
+        break;
+    case TOKEN_TRUE:
+        emit_byte(OP_TRUE);
+        break;
+    default:
+        return;
+    }
+}
+
+void Parser::variable(bool assignable) {
+    // named variables
+    uint idx = identifier_constant(previous( ));
+    if (assignable && match(TOKEN_EQUAL)) {
+        expression( );
+        emit_byte_with_index(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, idx);
+    } else {
+        emit_byte_with_index(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, idx);
+    }
+}
+
+void Parser::unary(bool assignable ) {
     TokenType operator_type = previous( ).type;
 
     // compile operand
@@ -125,37 +152,7 @@ void Parser::unary( ) {
     }
 }
 
-void Parser::parse_precedence(Precedence precedence) {
-    advance( );
-    ParseFn prefix_rule = parse_rule(previous( ).type)->prefix;
-    if (prefix_rule == nullptr) {
-        error("Expect expression. in parse precedence");
-        return;
-    }
-
-    (this->*prefix_rule)( );
-
-    while (precedence <= parse_rule(current( ).type)->precedence) {
-        advance( );
-        ParseFn infix_rule = parse_rule(previous( ).type)->infix;
-        if (infix_rule == nullptr) {
-            error("Expected non nullptr in parse precedence function");
-            return;
-        }
-        (this->*infix_rule)( );
-    }
-}
-
-uint Parser::parse_variable(const char* error_msg) {
-    consume(TOKEN_IDENTIFIER, error_msg);
-    return identifier_constant(previous( ));
-}
-
-void Parser::expression( ) {
-    parse_precedence(PREC_ASSIGNMENT);
-}
-
-void Parser::binary( ) {
+void Parser::binary(bool assignable ) {
     TokenType operator_type = previous( ).type;
     ParseRule* rule = parse_rule(operator_type);
     parse_precedence(static_cast<Precedence>(rule->precedence + 1));
@@ -195,21 +192,42 @@ void Parser::binary( ) {
     }
 }
 
-void Parser::literal( ) {
-    switch (previous( ).type) {
-    case TOKEN_FALSE:
-        emit_byte(OP_FALSE);
-        break;
-    case TOKEN_NIL:
-        emit_byte(OP_NIL);
-        break;
-    case TOKEN_TRUE:
-        emit_byte(OP_TRUE);
-        break;
-    default:
+// maybe remove nullptr checks if this is hot code
+void Parser::parse_precedence(Precedence precedence) {
+    advance( );
+    ParseFn prefix_rule = parse_rule(previous( ).type)->prefix;
+    if (prefix_rule == nullptr) {
+        error("Expect expression. in parse precedence");
         return;
     }
+    bool assignable = precedence <= PREC_ASSIGNMENT;
+    (this->*prefix_rule)(assignable);
+
+    while (precedence <= parse_rule(current( ).type)->precedence) {
+        advance( );
+        ParseFn infix_rule = parse_rule(previous( ).type)->infix;
+        if (infix_rule == nullptr) {
+            error("Expected non nullptr in parse precedence function");
+            return;
+        }
+        (this->*infix_rule)(assignable);
+    }
+
+    if (assignable && match(TOKEN_EQUAL)) {
+        error("Invalid assignemtn target.");
+    }
 }
+
+uint Parser::parse_variable(const char* error_msg) {
+    consume(TOKEN_IDENTIFIER, error_msg);
+    return identifier_constant(previous( ));
+}
+
+void Parser::expression( ) {
+    parse_precedence(PREC_ASSIGNMENT);
+}
+
+
 
 
 inline ParseRule* Parser::parse_rule(TokenType type) {
@@ -306,29 +324,16 @@ uint Parser::identifier_constant(const Token& token) {
         Value(str_from_chars(token.start, token.length)));
 }
 void Parser::define_variable(uint idx) {
-    if (idx < UINT8_MAX) {
-        chunk_.add_opcode(OP_DEFINE_GLOBAL, tokens_[current_ - 1].line);
-        chunk_.opcodes.append(static_cast<OpCode>(idx));
-    }
-    // Else we assume that idx fits in 24 bits
-    else {
-        chunk_.add_opcode(OP_DEFINE_GLOBAL_LONG, tokens_[current_ - 1].line);
-        OpCode* indices = reinterpret_cast<OpCode*>(&idx);
-        chunk_.opcodes.append(indices[0]);
-        chunk_.opcodes.append(indices[1]);
-        chunk_.opcodes.append(indices[2]);
-    }
+    emit_byte_with_index(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, idx);
 }
-void Parser::variable( ) {
-    // named variables
-    uint idx = identifier_constant(previous( ));
+void Parser::emit_byte_with_index(OpCode op_normal, OpCode op_long, uint idx) {
     if (idx < UINT8_MAX) {
-        chunk_.add_opcode(OP_GET_GLOBAL, tokens_[current_ - 1].line);
+        chunk_.add_opcode(op_normal, tokens_[current_ - 1].line);
         chunk_.opcodes.append(static_cast<OpCode>(idx));
     }
     // Else we assume that idx fits in 24 bits
     else {
-        chunk_.add_opcode(OP_GET_GLOBAL_LONG, tokens_[current_ - 1].line);
+        chunk_.add_opcode(op_long, tokens_[current_ - 1].line);
         OpCode* indices = reinterpret_cast<OpCode*>(&idx);
         chunk_.opcodes.append(indices[0]);
         chunk_.opcodes.append(indices[1]);

@@ -30,7 +30,7 @@ class VirtualMachine {
         constexpr bool operator()(StringObject* s1, StringObject* s2) { return true; }
     };
     using table_type = HashTable<StringObject*, Value, StringHash, StringEqual>;
-    using table_entry = TableEntry<StringObject*, Value>;
+    using entry_type = TableEntry<StringObject*, Value>;
     OpCode* ip;    // instruction pointer
     Chunk* chunk_;
     ValueStack stack_;

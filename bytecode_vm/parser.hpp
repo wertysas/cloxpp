@@ -29,7 +29,7 @@ enum Precedence : uint8_t {
 };
 
 class Parser;
-typedef void (Parser::*ParseFn)( );
+typedef void (Parser::*ParseFn)(bool);
 
 struct ParseRule {
     ParseFn prefix;
@@ -59,15 +59,16 @@ class Parser {
     inline const Token& current( ) const { return tokens_[current_]; }
     inline const Token& next_token( );
 
-    void number( );
-    void string( );
-    void variable();
-    void grouping( );
-    void expression( );
-    void literal( );
-    void unary( );
-    void binary( );
+    // Pars Functions
+    void number(bool assignable);
+    void string(bool assignable);
+    void grouping(bool assignable);
+    void variable(bool assignable);
+    void literal(bool assignable);
+    void unary(bool assignable);
+    void binary(bool assignable);
 
+    void expression();
     void parse_precedence(Precedence precedence);
     void declaration( );
     void statement( );
@@ -81,7 +82,7 @@ class Parser {
 
     void emit_byte(OpCode opcode);
     void emit_byte(uint token_idx, OpCode opcode);
-    void emit_byte_with_index(OpCode op, uint idx);
+    void emit_byte_with_index(OpCode op_short, OpCode op_long, uint idx);
 
     private:
     uint previous_;

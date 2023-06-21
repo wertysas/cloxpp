@@ -17,6 +17,8 @@ enum OpCode : uint8_t {
     OP_DEFINE_GLOBAL_LONG,
     OP_GET_GLOBAL,
     OP_GET_GLOBAL_LONG,
+    OP_SET_GLOBAL,
+    OP_SET_GLOBAL_LONG,
     OP_NIL,
     OP_TRUE,
     OP_FALSE,

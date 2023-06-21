@@ -63,6 +63,10 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
         return constant_instruction("OP_GET_GLOBAL", chunk, offset);
     case OP_GET_GLOBAL_LONG:
         return constant_instruction_long("OP_GET_GLOBAL_LONG", chunk, offset);
+    case OP_SET_GLOBAL:
+        return constant_instruction("OP_SET_GLOBAL", chunk, offset);
+    case OP_SET_GLOBAL_LONG:
+        return constant_instruction_long("OP_SET_GLOBAL_LONG", chunk, offset);
     case OP_ADD:
         return simple_instruction("OP_ADD", offset);
     case OP_SUBTRACT:
