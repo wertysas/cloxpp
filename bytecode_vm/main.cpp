@@ -11,11 +11,11 @@
 #include "virtual_machine.hpp"
 #include "compiler.hpp"
 
-void repl();
+void repl(VirtualMachine& VM);
 
-InterpretResult interpret(std::string& basicString);
+InterpretResult interpret(std::string& basicString, VirtualMachine& VM);
 
-void run_file(char *string);
+void run_file(char *string, VirtualMachine& VM);
 
 using std::cin;
 using std::cout;
@@ -27,10 +27,10 @@ int main(int argc, char* argv[]) {
     VirtualMachine VM{};
 
     if (argc==1) {
-        repl();
+        repl(VM);
     }
     else if (argc==2) {
-        run_file(argv[1]);
+        run_file(argv[1], VM);
     } else {
         std::cerr << "Usage cloxpp [path]" << std::endl;
         exit(64);
@@ -39,18 +39,18 @@ int main(int argc, char* argv[]) {
 
 }
 
-void run_file(char *file_path) {
+void run_file(char *file_path, VirtualMachine& VM) {
     std::ifstream fs(file_path);
     if (fs.fail()) { cout << "Failed top open file: " << file_path << endl; }
     std::stringstream file_buffer;
     std::string source = file_buffer.str();
-    InterpretResult result = interpret(source);
+    InterpretResult result = interpret(source, VM);
 
     if (result == INTERPRET_COMPILE_ERROR) { exit(65); }
     if (result == INTERPRET_RUNTIME_ERROR) { exit(70); }
 }
 
-void repl() {
+void repl(VirtualMachine& VM) {
     std::string input_line;
     for (;;) {
        std::cout << "> ";// << std::flush;
@@ -64,17 +64,16 @@ void repl() {
            }
            break;
        }
-      interpret(input_line);
+      interpret(input_line, VM);
     }
 }
 
-InterpretResult interpret(std::string& source) {
+InterpretResult interpret(std::string& source, VirtualMachine& VM) {
     Chunk bytecode{};
     if (!compile(source, bytecode)) {
         return INTERPRET_COMPILE_ERROR;
     }
 
-    VirtualMachine VM{};
     InterpretResult result = VM.interpret(&bytecode);
     return result;
 }

@@ -8,9 +8,9 @@
 #include "chunk.hpp"
 #include "stack.hpp"
 #include "error_handling.hpp"
+#include "hash_table.hpp"
 
 using ValueStack = StaticStack<Value, 1024>;
-
 
 enum InterpretResult {
     INTERPRET_SUCCESS,
@@ -19,16 +19,24 @@ enum InterpretResult {
 };
 
 class VirtualMachine {
-public:
+    public:
     InterpretResult interpret(Chunk* chunk);
-    InterpretResult run();
-    //VirtualMachine(Chunk* chunk) : chunk_(chunk), ip(chunk->opcodes.head()), stack_() {}
-private:
-    OpCode* ip; // instruction pointer
+    InterpretResult run( );
+    VirtualMachine( )
+        : chunk_(nullptr), ip(nullptr), stack_( ), global_table_( ) {}
+
+    private:
+    struct StringEqual {
+        constexpr bool operator()(StringObject* s1, StringObject* s2) { return true; }
+    };
+    using table_type = HashTable<StringObject*, Value, StringHash, StringEqual>;
+    using entry_type = TableEntry<StringObject*, Value>;
+    OpCode* ip;    // instruction pointer
     Chunk* chunk_;
     ValueStack stack_;
+    table_type global_table_;
     void runtime_error(const char* fmt...);
 };
 
 
-#endif //CLOXPP_VIRTUAL_MACHINE_HPP
+#endif    // CLOXPP_VIRTUAL_MACHINE_HPP
