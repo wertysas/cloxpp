@@ -16,10 +16,13 @@ size_t simple_instruction(std::string op_name, size_t offset);
 
 size_t
 constant_instruction(std::string op_name, const Chunk& chunk, size_t offset);
-
 size_t constant_instruction_long(std::string op_name,
                                  const Chunk& chunk,
                                  size_t offset);
+
+size_t byte_instruction(std::string op_name, const Chunk& chunk, size_t offset);
+size_t
+byte_instruction_long(std::string op_name, const Chunk& chunk, size_t offset);
 
 uint line_number(const Chunk& chunk, size_t offset);
 

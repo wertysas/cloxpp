@@ -121,6 +121,27 @@ InterpretResult VirtualMachine::run( ) {
             stack_.popn(n);
             break;
         }
+        case OP_GET_LOCAL: {
+            uint8_t idx = READ_BYTE( );
+            stack_.push(stack_[idx]);
+            break;
+        }
+        case OP_GET_LOCAL_LONG: {
+            uint32_t idx = constant_long_idx(ip);
+            ip += 3;
+            stack_.push(stack_[idx]);
+            break;
+        }
+        case OP_SET_LOCAL: {
+            uint8_t idx = READ_BYTE( );
+            stack_[idx] = stack_.peek(0);
+            break;
+        }
+        case OP_SET_LOCAL_LONG: {
+            uint32_t idx = constant_long_idx(ip);
+            stack_[idx] = stack_.peek(0);
+            break;
+        }
         case OP_DEFINE_GLOBAL: {
             StringObject* name = READ_CONSTANT( ).string( );
             global_table_.insert(name, stack_.peek(0));

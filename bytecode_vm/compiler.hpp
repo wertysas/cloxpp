@@ -11,7 +11,7 @@
 #include "static_array.hpp"
 
 struct LocalVariable {
-    Token name;
+    Token token;
     uint depth;
 };
 
@@ -30,7 +30,7 @@ struct Scope {
             return false;
         }
         LocalVariable local = locals[local_count++];
-        local.name = name;
+        local.token = name;
         local.depth = scope_depth;
         return true;
     }

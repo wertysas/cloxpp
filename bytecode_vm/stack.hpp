@@ -55,7 +55,6 @@ template<typename T, size_t MAXSIZE>
 void StaticStack<T, MAXSIZE>::popn(size_t n) {
     assert(n <=(top_-elements_));
     top_ -= n;
-    return *top_;
 }
 
 template<typename T, size_t MAXSIZE>

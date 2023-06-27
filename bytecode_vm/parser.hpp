@@ -81,7 +81,8 @@ Parser(const std::vector<Token>& tokens,
     void define_variable(uint global);
     void declare_variable();
     void var_declaration( );
-    void named_variable(bool assignable);
+    void named_variable(const Token& token, bool assignable);
+    uint resolve_local(const Token& token);
     void print_statement( );
     void expression_statement( );
     uint identifier_constant(Token const& token);
