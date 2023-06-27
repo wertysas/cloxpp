@@ -116,6 +116,11 @@ InterpretResult VirtualMachine::run( ) {
             stack_.pop( );
             break;
         }
+        case OP_POPN: {
+            uint8_t n = static_cast<uint8_t>(READ_BYTE());
+            stack_.popn(n);
+            break;
+        }
         case OP_DEFINE_GLOBAL: {
             StringObject* name = READ_CONSTANT( ).string( );
             global_table_.insert(name, stack_.peek(0));

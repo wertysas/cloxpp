@@ -593,7 +593,7 @@ class DOCTEST_INTERFACE String
     static DOCTEST_CONSTEXPR size_type len  = 24;      //!OCLINT avoid private static members
     static DOCTEST_CONSTEXPR size_type last = len - 1; //!OCLINT avoid private static members
 
-    struct view // len should be more than sizeof(view) - because of the final byte for flags
+    struct view // len should be more than sizeof(view) - because of the last byte for flags
     {
         char*    ptr;
         size_type size;

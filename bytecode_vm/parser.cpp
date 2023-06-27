@@ -125,14 +125,7 @@ void Parser::literal(bool assignable) {
 }
 
 void Parser::variable(bool assignable) {
-    // named variables
-    uint idx = identifier_constant(previous( ));
-    if (assignable && match(TOKEN_EQUAL)) {
-        expression( );
-        emit_byte_with_index(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, idx);
-    } else {
-        emit_byte_with_index(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, idx);
-    }
+    named_variable(assignable);
 }
 
 void Parser::unary(bool assignable) {
@@ -222,7 +215,7 @@ void Parser::parse_precedence(Precedence precedence) {
 uint Parser::parse_variable(const char* error_msg) {
     consume(TOKEN_IDENTIFIER, error_msg);
 
-    declare_variable();
+    declare_variable( );
     if (scope_.scope_depth > 0)
         return 0;
 
@@ -289,9 +282,9 @@ void Parser::statement( ) {
     if (match(TOKEN_PRINT)) {
         print_statement( );
     } else if (match(TOKEN_LEFT_BRACE)) {
-        begin_scope();
-        block();
-        end_scope();
+        begin_scope( );
+        block( );
+        end_scope( );
     } else {
         expression_statement( );
     }
@@ -333,16 +326,28 @@ uint Parser::identifier_constant(const Token& token) {
         Value(str_from_chars(token.start, token.length)));
 }
 void Parser::define_variable(uint idx) {
-    if (scope_.scope_depth > 0 )
+    if (scope_.scope_depth > 0)
         return;
     emit_byte_with_index(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, idx);
 }
 
 void Parser::declare_variable( ) {
-    if (scope_.scope_depth == 0 )
+    if (scope_.scope_depth == 0)
         return;
 
-    Token name = previous();
+    Token name = previous( );
+    for (uint i = scope_.local_count - 1; i >= 0; i--) {
+        LocalVariable local = scope_.locals[i];
+        if (local.depth != -1 && local.depth < scope_.scope_depth) {
+            break;
+        }
+
+        if (lexemes_equal(name, local.name)) {
+            error("Already a variable with this name in this scope.");
+        }
+    }
+
+
     if (!scope_.add_local(name)) {
         error("Too many local variables declared in scope (maximum is 256).");
         return;
@@ -365,7 +370,7 @@ void Parser::emit_byte_with_index(OpCode op_normal, OpCode op_long, uint idx) {
 }
 void Parser::block( ) {
     while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
-        declaration();
+        declaration( );
     }
     consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
 }
@@ -373,5 +378,26 @@ void Parser::begin_scope( ) {
     ++scope_.scope_depth;
 }
 void Parser::end_scope( ) {
-    ++scope_.local_count;
+    --scope_.scope_depth;
+    // while
+    uint n = 0;
+    while (scope_.local_count > 0 &&
+           scope_.last( ).depth > scope_.scope_depth) {
+        ++n;
+        --scope_.local_count;
+    }
+    emit_byte(OP_POPN);
+    emit_byte(static_cast<OpCode>(n));
+}
+void Parser::named_variable(bool assignable) {
+    uint8_t get_op, set_op;
+
+    uint idx = identifier_constant(previous( ));
+        if (assignable && match(TOKEN_EQUAL)) {
+            expression( );
+            emit_byte_with_index(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, idx);
+        } else {
+            emit_byte_with_index(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, idx);
+        }
+    }
 }

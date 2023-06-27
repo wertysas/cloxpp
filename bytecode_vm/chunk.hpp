@@ -31,6 +31,7 @@ enum OpCode : uint8_t {
     OP_LESS_EQUAL,
     OP_NEGATE,
     OP_POP,
+    OP_POPN,
     OP_ADD,
     OP_SUBTRACT,
     OP_MULTIPLY,

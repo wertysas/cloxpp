@@ -15,8 +15,10 @@ class StaticArray {
 
     alignas(T) std::byte elements[sizeof(T)*N];
     public:
-    constexpr T* begin() { return reinterpret_cast<T*>(elements); }
-    constexpr T* end() { return reinterpret_cast<T*>(&elements[sizeof(T)*N]); }
+    constexpr T* begin()  { return reinterpret_cast<T*>(elements); }
+    constexpr const T* begin() const { return reinterpret_cast<T*>(elements); }
+    constexpr T* end()  { return reinterpret_cast<T*>(&elements[sizeof(T)*N]); }
+    constexpr const T* end() const { return reinterpret_cast<T*>(&elements[sizeof(T)*N]); }
     constexpr reference operator[](size_t index) {
         return begin()[index];
     }

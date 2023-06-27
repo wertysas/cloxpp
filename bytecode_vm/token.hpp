@@ -98,5 +98,6 @@ static const char* token_types[] = {
 };
 
 const char* token_to_string(TokenType type);
+bool lexemes_equal(Token token1, Token token2);
 
 #endif //CLOXPP_TOKEN_HPP

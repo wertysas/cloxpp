@@ -7,8 +7,8 @@
 
 
 #include <cstdlib>
-
 #include <iostream>
+#include <cassert>
 
 template <typename T, size_t MAXSIZE=2048>
 class StaticStack {
@@ -21,6 +21,7 @@ public:
 
     void push(T e);
     T pop();
+    void popn(size_t size);
     const T& peek(uint dist);
 
     class Iterator;
@@ -47,6 +48,13 @@ void StaticStack<T, MAXSIZE>::push(T e) {
 template<typename T, size_t MAXSIZE>
 T StaticStack<T, MAXSIZE>::pop() {
     top_--;
+    return *top_;
+}
+
+template<typename T, size_t MAXSIZE>
+void StaticStack<T, MAXSIZE>::popn(size_t n) {
+    assert(n <=(top_-elements_));
+    top_ -= n;
     return *top_;
 }
 
