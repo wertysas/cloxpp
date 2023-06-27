@@ -11,6 +11,7 @@ set(SOURCE_FILES_VM
         bytecode_vm/chunk.cpp
         bytecode_vm/chunk.hpp
         bytecode_vm/dynamic_array.hpp
+        bytecode_vm/static_array.hpp
         bytecode_vm/memory.hpp
         bytecode_vm/memory.cpp
         bytecode_vm/debug.cpp

@@ -16,14 +16,15 @@
 bool compile(const string &source, Chunk& bytecode) {
     Scanner scanner(source);
     std::vector<Token> tokens = scanner.scan_tokens();
+    ErrorReporter error_reporter{};
+    Scope current_scope;
 #ifdef DEBUG_PRINT_CODE
     std::cout << "tokens size: " << tokens.size() << std::endl;
     for (auto t: tokens) {
         std::cout << "TokenType: " << token_to_string(t.type) << std::endl;
     }
 #endif
-    ErrorReporter error_reporter{};
-    Parser parser(tokens, bytecode, error_reporter);
+    Parser parser(tokens, bytecode, current_scope, error_reporter);
     //parser.advance();
     parser.parse_tokens();
     //parser.consume(TOKEN_EOF, "Expect end of expression.");

@@ -10,6 +10,7 @@
 #include "token.hpp"
 #include "error_handling.hpp"
 #include "chunk.hpp"
+#include "compiler.hpp"
 
 
 // Precedence enum where the different presedences are in order of importance
@@ -39,8 +40,9 @@ struct ParseRule {
 
 class Parser {
     public:
-    Parser(const std::vector<Token>& tokens,
+Parser(const std::vector<Token>& tokens,
            Chunk& chunk,
+           Scope& scope,
            ErrorReporter& error_reporter);
 
     void advance( );
@@ -68,12 +70,16 @@ class Parser {
     void unary(bool assignable);
     void binary(bool assignable);
 
-    void expression();
+    void expression( );
     void parse_precedence(Precedence precedence);
     void declaration( );
     void statement( );
+    void block( );
+    void begin_scope();
+    void end_scope();
     uint parse_variable(const char* error_msg);
     void define_variable(uint global);
+    void declare_variable();
     void var_declaration( );
     void print_statement( );
     void expression_statement( );
@@ -88,6 +94,7 @@ class Parser {
     uint previous_;
     uint current_;
     Chunk& chunk_;
+    Scope& scope_;
     const std::vector<Token>& tokens_;
     ErrorReporter& error_reporter_;
     bool panic_mode_ = false;

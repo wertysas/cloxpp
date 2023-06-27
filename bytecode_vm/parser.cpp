@@ -8,8 +8,9 @@
 // SWITCH/BRANCH (IF NEEDED)
 Parser::Parser(const std::vector<Token>& tokens,
                Chunk& chunk,
+               Scope& scope,
                ErrorReporter& error_reporter)
-    : previous_(0), current_(0), chunk_(chunk), tokens_(tokens),
+    : previous_(0), current_(0), chunk_(chunk), tokens_(tokens), scope_(scope),
       error_reporter_(error_reporter), parse_rules( ) {
     parse_rules[TOKEN_LEFT_PAREN] = {&Parser::grouping, nullptr, PREC_NONE};
     parse_rules[TOKEN_RIGHT_PAREN] = {nullptr, nullptr, PREC_NONE};
@@ -134,7 +135,7 @@ void Parser::variable(bool assignable) {
     }
 }
 
-void Parser::unary(bool assignable ) {
+void Parser::unary(bool assignable) {
     TokenType operator_type = previous( ).type;
 
     // compile operand
@@ -152,7 +153,7 @@ void Parser::unary(bool assignable ) {
     }
 }
 
-void Parser::binary(bool assignable ) {
+void Parser::binary(bool assignable) {
     TokenType operator_type = previous( ).type;
     ParseRule* rule = parse_rule(operator_type);
     parse_precedence(static_cast<Precedence>(rule->precedence + 1));
@@ -220,14 +221,18 @@ void Parser::parse_precedence(Precedence precedence) {
 
 uint Parser::parse_variable(const char* error_msg) {
     consume(TOKEN_IDENTIFIER, error_msg);
+
+    declare_variable();
+    if (scope_.scope_depth > 0)
+        return 0;
+
+
     return identifier_constant(previous( ));
 }
 
 void Parser::expression( ) {
     parse_precedence(PREC_ASSIGNMENT);
 }
-
-
 
 
 inline ParseRule* Parser::parse_rule(TokenType type) {
@@ -283,6 +288,10 @@ void Parser::var_declaration( ) {
 void Parser::statement( ) {
     if (match(TOKEN_PRINT)) {
         print_statement( );
+    } else if (match(TOKEN_LEFT_BRACE)) {
+        begin_scope();
+        block();
+        end_scope();
     } else {
         expression_statement( );
     }
@@ -324,8 +333,22 @@ uint Parser::identifier_constant(const Token& token) {
         Value(str_from_chars(token.start, token.length)));
 }
 void Parser::define_variable(uint idx) {
+    if (scope_.scope_depth > 0 )
+        return;
     emit_byte_with_index(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, idx);
 }
+
+void Parser::declare_variable( ) {
+    if (scope_.scope_depth == 0 )
+        return;
+
+    Token name = previous();
+    if (!scope_.add_local(name)) {
+        error("Too many local variables declared in scope (maximum is 256).");
+        return;
+    }
+}
+
 void Parser::emit_byte_with_index(OpCode op_normal, OpCode op_long, uint idx) {
     if (idx < UINT8_MAX) {
         chunk_.add_opcode(op_normal, tokens_[current_ - 1].line);
@@ -339,4 +362,16 @@ void Parser::emit_byte_with_index(OpCode op_normal, OpCode op_long, uint idx) {
         chunk_.opcodes.append(indices[1]);
         chunk_.opcodes.append(indices[2]);
     }
+}
+void Parser::block( ) {
+    while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+        declaration();
+    }
+    consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+void Parser::begin_scope( ) {
+    ++scope_.scope_depth;
+}
+void Parser::end_scope( ) {
+    ++scope_.local_count;
 }

@@ -962,7 +962,7 @@ template <typename T> struct is_rvalue_reference<T&&> : true_type { };
 template<typename T> struct remove_const { using type = T; };
 template <typename T> struct remove_const<const T> { using type = T; };
 
-// Compiler intrinsics
+// Scope intrinsics
 template <typename T> struct is_enum { static DOCTEST_CONSTEXPR bool value = __is_enum(T); };
 template <typename T> struct underlying_type { using type = __underlying_type(T); };
 
