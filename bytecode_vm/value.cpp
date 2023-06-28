@@ -84,7 +84,7 @@ void print_value(Value value) {
 void print_object(Value value) {
     switch (value.object_type()) {
         case OBJ_STRING:
-            std::cout << '"' << value.c_string() << '"';
+            std::cout << value.c_string();
             break;
     }
 }

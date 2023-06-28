@@ -23,7 +23,7 @@ InterpretResult VirtualMachine::interpret(Chunk* chunk) {
     do {                                                                      \
         if (!stack_.peek(0).is_number( ) || !stack_.peek(1).is_number( )) {   \
             runtime_error(                                                    \
-                "Numeric binary operation requires operands to be numbers."); \
+                "Operands must be numbers."); \
             return INTERPRET_RUNTIME_ERROR;                                   \
         }                                                                     \
     } while (false)
@@ -139,6 +139,7 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_SET_LOCAL_LONG: {
             uint32_t idx = constant_long_idx(ip);
+            ip += 3;
             stack_[idx] = stack_.peek(0);
             break;
         }
@@ -209,7 +210,8 @@ InterpretResult VirtualMachine::run( ) {
                 Value v1 = stack_.pop( );
                 stack_.push(Value{concatenate(v1.string( ), v2.string( ))});
             } else {
-                runtime_error("Binary '+' operands must be numbers or strings");
+                runtime_error("Operands must be two numbers or two strings.");
+                return INTERPRET_RUNTIME_ERROR;
             }
             break;
         }

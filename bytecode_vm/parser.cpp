@@ -192,7 +192,7 @@ void Parser::parse_precedence(Precedence precedence) {
     advance( );
     ParseFn prefix_rule = parse_rule(previous( ).type)->prefix;
     if (prefix_rule == nullptr) {
-        error("Expect expression. in parse precedence");
+        error("Expect expression.");
         return;
     }
     bool assignable = precedence <= PREC_ASSIGNMENT;
@@ -209,7 +209,7 @@ void Parser::parse_precedence(Precedence precedence) {
     }
 
     if (assignable && match(TOKEN_EQUAL)) {
-        error("Invalid assignemtn target.");
+        error("Invalid assignment target.");
     }
 }
 
@@ -267,7 +267,7 @@ void Parser::declaration( ) {
 }
 
 void Parser::var_declaration( ) {
-    uint global = parse_variable("Expect variable name");
+    uint global = parse_variable("Expect variable name.");
 
     if (match(TOKEN_EQUAL)) {
         expression( );
@@ -402,7 +402,7 @@ void Parser::named_variable(const Token& token, bool assignable) {
             emit_byte_with_index(OP_GET_LOCAL, OP_GET_LOCAL_LONG, idx);
         }
     } else {
-        idx = identifier_constant(previous( ));
+        idx = identifier_constant(token);
         if (assignable && match(TOKEN_EQUAL)) {
             expression( );
             emit_byte_with_index(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, idx);
@@ -414,11 +414,12 @@ void Parser::named_variable(const Token& token, bool assignable) {
 
 uint Parser::resolve_local(const Token& token) {
     for (uint i = scope_.local_count; i > 0; i--) {
-        if (lexemes_equal(token, scope_[i - 1].token)) {
-            if (scope_[i - 1].depth == -1) {
+        LocalVariable& local = scope_[i-1];
+        if (lexemes_equal(token, local.token)) {
+            if (local.depth == -1) {
                 error("Can't read local variable in its own initializer");
             }
-            return i;
+            return i-1;
         }
     }
     return UINT_MAX;

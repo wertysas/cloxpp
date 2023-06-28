@@ -56,7 +56,7 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_POP:
         return simple_instruction("OP_POP", offset);
     case OP_POPN:
-        return simple_instruction("OP_POPN", offset);
+        return byte_instruction("OP_POPN", chunk, offset);
     case OP_SET_LOCAL:
         return byte_instruction("OP_SET_LOCAL", chunk, offset);
     case OP_SET_LOCAL_LONG:

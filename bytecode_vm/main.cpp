@@ -40,6 +40,7 @@ void run_file(char* file_path, VirtualMachine& VM) {
         cout << "Failed top open file: " << file_path << endl;
     }
     std::stringstream file_buffer;
+    file_buffer << fs.rdbuf();
     std::string source = file_buffer.str( );
     InterpretResult result = interpret(source, VM);
 
