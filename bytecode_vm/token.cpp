@@ -11,5 +11,5 @@ const char* token_to_string(TokenType type) {
 bool lexemes_equal(Token token1, Token token2) {
     if (token1.length != token2.length)
         return false;
-    return memcmp(token1.start, token2.start, token1.length);
+    return memcmp(token1.start, token2.start, token1.length)==0;
 }

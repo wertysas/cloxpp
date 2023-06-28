@@ -29,9 +29,9 @@ struct Scope {
         if (local_count==UINT8_MAX+1) {
             return false;
         }
-        LocalVariable local = locals[local_count++];
+        LocalVariable& local = locals[local_count++];
         local.token = name;
-        local.depth = scope_depth;
+        local.depth = -1;
         return true;
     }
     void mark_initialized() {

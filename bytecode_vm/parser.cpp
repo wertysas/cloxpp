@@ -126,7 +126,7 @@ void Parser::literal(bool assignable) {
 }
 
 void Parser::variable(bool assignable) {
-    named_variable(previous(), assignable);
+    named_variable(previous( ), assignable);
 }
 
 void Parser::unary(bool assignable) {
@@ -339,7 +339,7 @@ void Parser::declare_variable( ) {
         return;
 
     Token name = previous( );
-    for (uint i = scope_.local_count - 1; i >= 0; i--) {
+    for (int i = static_cast<int>(scope_.local_count) - 1; i >= 0; i--) {
         LocalVariable local = scope_.locals[i];
         if (local.depth != -1 && local.depth < scope_.scope_depth) {
             break;
@@ -413,14 +413,13 @@ void Parser::named_variable(const Token& token, bool assignable) {
 }
 
 uint Parser::resolve_local(const Token& token) {
-    for (uint i=scope_.local_count; i>0; i--) {
-        if (lexemes_equal(token, scope_[i-1].token)) {
-            if (scope_[-1].depth == -1) {
+    for (uint i = scope_.local_count; i > 0; i--) {
+        if (lexemes_equal(token, scope_[i - 1].token)) {
+            if (scope_[i - 1].depth == -1) {
                 error("Can't read local variable in its own initializer");
             }
-                return i;
+            return i;
         }
     }
     return UINT_MAX;
 }
-
