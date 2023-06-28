@@ -2,6 +2,7 @@
 // Created by Johan Ericsson on 4/24/23.
 //
 
+#include <climits>
 #include "parser.hpp"
 
 // TODO: MEASURE PERFORMANCE IMPACT OF USING TABLE BASED FUNCTION LOOKUP VS
@@ -326,8 +327,10 @@ uint Parser::identifier_constant(const Token& token) {
         Value(str_from_chars(token.start, token.length)));
 }
 void Parser::define_variable(uint idx) {
-    if (scope_.scope_depth > 0)
+    if (scope_.scope_depth > 0) {
+        scope_.mark_initialized( );
         return;
+    }
     emit_byte_with_index(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, idx);
 }
 
@@ -412,6 +415,9 @@ void Parser::named_variable(const Token& token, bool assignable) {
 uint Parser::resolve_local(const Token& token) {
     for (uint i=scope_.local_count; i>0; i--) {
         if (lexemes_equal(token, scope_[i-1].token)) {
+            if (scope_[-1].depth == -1) {
+                error("Can't read local variable in its own initializer");
+            }
                 return i;
         }
     }
