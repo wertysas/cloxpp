@@ -68,7 +68,7 @@ void Parser::advance( ) {
         // if (current_ >= tokens_.size( )) {
         //     error(current_, "Out of token range while parsing");
         // }
-        error(current_, "Parser Error: NON VALID TOKEN");
+        error(current_, current().start);
     }
 }
 
@@ -85,6 +85,7 @@ inline void Parser::error(uint idx, const char* message) {
         return;
     panic_mode_ = true;
     error_reporter_.error(tokens_[idx], message);
+    had_error();
 }
 
 inline void Parser::error(const char* message) {
@@ -242,6 +243,9 @@ inline void Parser::emit_byte(uint idx, OpCode opcode) {
 }
 
 void Parser::parse_tokens( ) {
+    if (current().type == TOKEN_ERROR) {
+       error(current_, current().start);
+    }
     while (!match(TOKEN_EOF)) {
         declaration( );
     }
@@ -417,7 +421,7 @@ uint Parser::resolve_local(const Token& token) {
         LocalVariable& local = scope_[i-1];
         if (lexemes_equal(token, local.token)) {
             if (local.depth == -1) {
-                error("Can't read local variable in its own initializer");
+                error("Can't read local variable in its own initializer.");
             }
             return i-1;
         }
