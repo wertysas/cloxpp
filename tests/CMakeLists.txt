@@ -2,3 +2,4 @@
 
 include_directories(../bytecode_vm)
 add_executable(HASH_TABLE_TEST hash_table_test.cpp)
+add_executable(STATIC_ARRAY_TEST static_array_test.cpp)

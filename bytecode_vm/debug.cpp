@@ -55,6 +55,16 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
         return simple_instruction("OP_NEGATE", offset);
     case OP_POP:
         return simple_instruction("OP_POP", offset);
+    case OP_POPN:
+        return byte_instruction("OP_POPN", chunk, offset);
+    case OP_SET_LOCAL:
+        return byte_instruction("OP_SET_LOCAL", chunk, offset);
+    case OP_SET_LOCAL_LONG:
+        return byte_instruction_long("OP_SET_LOCAL_LONG", chunk, offset);
+    case OP_GET_LOCAL:
+        return byte_instruction("OP_GET_LOCAL", chunk, offset);
+    case OP_GET_LOCAL_LONG:
+        return byte_instruction_long("OP_GET_LOCAL_LONG", chunk, offset);
     case OP_DEFINE_GLOBAL:
         return constant_instruction("OP_DEFINE_GLOBAL", chunk, offset);
     case OP_DEFINE_GLOBAL_LONG:
@@ -125,4 +135,22 @@ uint line_number(const Chunk& chunk, size_t offset) {
         }
     }
     return 0;
+}
+size_t
+byte_instruction(std::string op_name, const Chunk& chunk, size_t offset) {
+    uint8_t idx = chunk.opcodes[offset + 1];
+    std::cout << std::setw(16) << std::left << op_name
+              << "\t" << std::right << std::setw(5)
+              << static_cast<unsigned int>(idx) << std::endl;
+    return offset +2 ;
+}
+
+size_t
+byte_instruction_long(std::string op_name, const Chunk& chunk, size_t offset) {
+    uint8_t* b = reinterpret_cast<uint8_t*>(&chunk.opcodes[offset + 1]);
+    uint32_t idx = (b[0] | b[1] << 8 | b[2] << 16);
+    std::cout << std::setw(16) << std::left << op_name
+              << "\t" << std::right << std::setw(5)
+              << static_cast<unsigned int>(idx) << std::endl;
+    return offset+4;
 }

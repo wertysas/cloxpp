@@ -37,6 +37,7 @@ bool operator==(const Value &v1, const Value &v2) {
             auto* str2 = v2.string();
             return str1->length==str2->length && (memcmp(str1->chars, str2->chars, str1->length)==0);
     }
+    return false;
 }
 
 bool operator!=(const Value &v1, const Value &v2) {
@@ -84,7 +85,7 @@ void print_value(Value value) {
 void print_object(Value value) {
     switch (value.object_type()) {
         case OBJ_STRING:
-            std::cout << '"' << value.c_string() << '"';
+            std::cout << value.c_string();
             break;
     }
 }

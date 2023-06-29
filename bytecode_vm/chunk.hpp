@@ -13,6 +13,10 @@
 enum OpCode : uint8_t {
     OP_CONSTANT,
     OP_CONSTANT_LONG,
+    OP_SET_LOCAL,
+    OP_SET_LOCAL_LONG,
+    OP_GET_LOCAL,
+    OP_GET_LOCAL_LONG,
     OP_DEFINE_GLOBAL,
     OP_DEFINE_GLOBAL_LONG,
     OP_GET_GLOBAL,
@@ -31,6 +35,7 @@ enum OpCode : uint8_t {
     OP_LESS_EQUAL,
     OP_NEGATE,
     OP_POP,
+    OP_POPN,
     OP_ADD,
     OP_SUBTRACT,
     OP_MULTIPLY,

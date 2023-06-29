@@ -80,6 +80,7 @@ struct TableEntry<Key, T, std::enable_if_t<std::is_pointer_v<Key>>> {
         } else {                 // used
             value = table_entry.value;
         }
+        return *this;
     }
 };
 

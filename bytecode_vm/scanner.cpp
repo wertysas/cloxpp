@@ -133,9 +133,8 @@ inline Token Scanner::token(TokenType type) {
     return Token(type, start_, static_cast<uint>(current_-start_), line_);
 }
 
-// FIXME: fix error reporting
 inline Token Scanner::errortoken(const char* error_msg) {
-    return Token(TOKEN_ERROR, start_, static_cast<uint>(current_-start_), line_);
+    return Token(TOKEN_ERROR, error_msg, static_cast<uint>(strlen(error_msg)), line_);
 }
 
 

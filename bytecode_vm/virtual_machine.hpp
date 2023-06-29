@@ -26,9 +26,6 @@ class VirtualMachine {
         : chunk_(nullptr), ip(nullptr), stack_( ), global_table_( ) {}
 
     private:
-    struct StringEqual {
-        constexpr bool operator()(StringObject* s1, StringObject* s2) { return true; }
-    };
     using table_type = HashTable<StringObject*, Value, StringHash, StringEqual>;
     using entry_type = TableEntry<StringObject*, Value>;
     OpCode* ip;    // instruction pointer

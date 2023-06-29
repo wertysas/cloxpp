@@ -2,14 +2,16 @@
 // Created by Johan Ericsson on 4/24/23.
 //
 
+#include <climits>
 #include "parser.hpp"
 
 // TODO: MEASURE PERFORMANCE IMPACT OF USING TABLE BASED FUNCTION LOOKUP VS
 // SWITCH/BRANCH (IF NEEDED)
 Parser::Parser(const std::vector<Token>& tokens,
                Chunk& chunk,
+               Scope& scope,
                ErrorReporter& error_reporter)
-    : previous_(0), current_(0), chunk_(chunk), tokens_(tokens),
+    : previous_(0), current_(0), chunk_(chunk), tokens_(tokens), scope_(scope),
       error_reporter_(error_reporter), parse_rules( ) {
     parse_rules[TOKEN_LEFT_PAREN] = {&Parser::grouping, nullptr, PREC_NONE};
     parse_rules[TOKEN_RIGHT_PAREN] = {nullptr, nullptr, PREC_NONE};
@@ -66,7 +68,7 @@ void Parser::advance( ) {
         // if (current_ >= tokens_.size( )) {
         //     error(current_, "Out of token range while parsing");
         // }
-        error(current_, "Parser Error: NON VALID TOKEN");
+        error(current_, current().start);
     }
 }
 
@@ -83,6 +85,7 @@ inline void Parser::error(uint idx, const char* message) {
         return;
     panic_mode_ = true;
     error_reporter_.error(tokens_[idx], message);
+    had_error();
 }
 
 inline void Parser::error(const char* message) {
@@ -124,17 +127,10 @@ void Parser::literal(bool assignable) {
 }
 
 void Parser::variable(bool assignable) {
-    // named variables
-    uint idx = identifier_constant(previous( ));
-    if (assignable && match(TOKEN_EQUAL)) {
-        expression( );
-        emit_byte_with_index(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, idx);
-    } else {
-        emit_byte_with_index(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, idx);
-    }
+    named_variable(previous( ), assignable);
 }
 
-void Parser::unary(bool assignable ) {
+void Parser::unary(bool assignable) {
     TokenType operator_type = previous( ).type;
 
     // compile operand
@@ -152,7 +148,7 @@ void Parser::unary(bool assignable ) {
     }
 }
 
-void Parser::binary(bool assignable ) {
+void Parser::binary(bool assignable) {
     TokenType operator_type = previous( ).type;
     ParseRule* rule = parse_rule(operator_type);
     parse_precedence(static_cast<Precedence>(rule->precedence + 1));
@@ -197,7 +193,7 @@ void Parser::parse_precedence(Precedence precedence) {
     advance( );
     ParseFn prefix_rule = parse_rule(previous( ).type)->prefix;
     if (prefix_rule == nullptr) {
-        error("Expect expression. in parse precedence");
+        error("Expect expression.");
         return;
     }
     bool assignable = precedence <= PREC_ASSIGNMENT;
@@ -214,20 +210,24 @@ void Parser::parse_precedence(Precedence precedence) {
     }
 
     if (assignable && match(TOKEN_EQUAL)) {
-        error("Invalid assignemtn target.");
+        error("Invalid assignment target.");
     }
 }
 
 uint Parser::parse_variable(const char* error_msg) {
     consume(TOKEN_IDENTIFIER, error_msg);
+
+    declare_variable( );
+    if (scope_.scope_depth > 0)
+        return 0;
+
+
     return identifier_constant(previous( ));
 }
 
 void Parser::expression( ) {
     parse_precedence(PREC_ASSIGNMENT);
 }
-
-
 
 
 inline ParseRule* Parser::parse_rule(TokenType type) {
@@ -243,6 +243,9 @@ inline void Parser::emit_byte(uint idx, OpCode opcode) {
 }
 
 void Parser::parse_tokens( ) {
+    if (current().type == TOKEN_ERROR) {
+       error(current_, current().start);
+    }
     while (!match(TOKEN_EOF)) {
         declaration( );
     }
@@ -268,7 +271,7 @@ void Parser::declaration( ) {
 }
 
 void Parser::var_declaration( ) {
-    uint global = parse_variable("Expect variable name");
+    uint global = parse_variable("Expect variable name.");
 
     if (match(TOKEN_EQUAL)) {
         expression( );
@@ -283,6 +286,10 @@ void Parser::var_declaration( ) {
 void Parser::statement( ) {
     if (match(TOKEN_PRINT)) {
         print_statement( );
+    } else if (match(TOKEN_LEFT_BRACE)) {
+        begin_scope( );
+        block( );
+        end_scope( );
     } else {
         expression_statement( );
     }
@@ -324,8 +331,36 @@ uint Parser::identifier_constant(const Token& token) {
         Value(str_from_chars(token.start, token.length)));
 }
 void Parser::define_variable(uint idx) {
+    if (scope_.scope_depth > 0) {
+        scope_.mark_initialized( );
+        return;
+    }
     emit_byte_with_index(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, idx);
 }
+
+void Parser::declare_variable( ) {
+    if (scope_.scope_depth == 0)
+        return;
+
+    Token name = previous( );
+    for (int i = static_cast<int>(scope_.local_count) - 1; i >= 0; i--) {
+        LocalVariable local = scope_.locals[i];
+        if (local.depth != -1 && local.depth < scope_.scope_depth) {
+            break;
+        }
+
+        if (lexemes_equal(name, local.token)) {
+            error("Already a variable with this name in this scope.");
+        }
+    }
+
+
+    if (!scope_.add_local(name)) {
+        error("Too many local variables declared in scope (maximum is 256).");
+        return;
+    }
+}
+
 void Parser::emit_byte_with_index(OpCode op_normal, OpCode op_long, uint idx) {
     if (idx < UINT8_MAX) {
         chunk_.add_opcode(op_normal, tokens_[current_ - 1].line);
@@ -339,4 +374,57 @@ void Parser::emit_byte_with_index(OpCode op_normal, OpCode op_long, uint idx) {
         chunk_.opcodes.append(indices[1]);
         chunk_.opcodes.append(indices[2]);
     }
+}
+void Parser::block( ) {
+    while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+        declaration( );
+    }
+    consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+void Parser::begin_scope( ) {
+    ++scope_.scope_depth;
+}
+void Parser::end_scope( ) {
+    --scope_.scope_depth;
+    // while
+    uint n = 0;
+    while (scope_.local_count > 0 &&
+           scope_.last( ).depth > scope_.scope_depth) {
+        ++n;
+        --scope_.local_count;
+    }
+    emit_byte(OP_POPN);
+    emit_byte(static_cast<OpCode>(n));
+}
+void Parser::named_variable(const Token& token, bool assignable) {
+    uint idx = resolve_local(token);
+    if (idx != UINT_MAX) {
+        if (assignable && match(TOKEN_EQUAL)) {
+            expression( );
+            emit_byte_with_index(OP_SET_LOCAL, OP_SET_LOCAL_LONG, idx);
+        } else {
+            emit_byte_with_index(OP_GET_LOCAL, OP_GET_LOCAL_LONG, idx);
+        }
+    } else {
+        idx = identifier_constant(token);
+        if (assignable && match(TOKEN_EQUAL)) {
+            expression( );
+            emit_byte_with_index(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, idx);
+        } else {
+            emit_byte_with_index(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, idx);
+        }
+    }
+}
+
+uint Parser::resolve_local(const Token& token) {
+    for (uint i = scope_.local_count; i > 0; i--) {
+        LocalVariable& local = scope_[i-1];
+        if (lexemes_equal(token, local.token)) {
+            if (local.depth == -1) {
+                error("Can't read local variable in its own initializer.");
+            }
+            return i-1;
+        }
+    }
+    return UINT_MAX;
 }
