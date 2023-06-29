@@ -65,7 +65,7 @@ InterpretResult VirtualMachine::run( ) {
             stack_.push(Value(false));
             break;
         case OP_NOT:
-            stack_.push(Value(check_falsiness(stack_.pop( ))));
+            stack_.push(Value(is_falsy(stack_.pop( ))));
             break;
         case OP_EQUAL:
             //  COMMUTATIVE
@@ -243,6 +243,18 @@ InterpretResult VirtualMachine::run( ) {
             print_value(stack_.pop( ));
             std::cout << std::endl;
             break;
+        }
+        case OP_JUMP: {
+            uint16_t offset = twobyte_idx(ip);
+            ip += 2;
+            ip += offset;
+            break;
+        }
+        case OP_JUMP_IF_FALSE: {
+            uint16_t offset = twobyte_idx(ip);
+            ip +=2;
+            if (is_falsy(stack_.peek(0)))
+                ip += offset;
         }
         case OP_RETURN: {
             return INTERPRET_SUCCESS;

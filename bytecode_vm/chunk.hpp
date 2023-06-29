@@ -11,8 +11,10 @@
 
 
 enum OpCode : uint8_t {
+    // Constants
     OP_CONSTANT,
     OP_CONSTANT_LONG,
+    // Variables
     OP_SET_LOCAL,
     OP_SET_LOCAL_LONG,
     OP_GET_LOCAL,
@@ -23,6 +25,7 @@ enum OpCode : uint8_t {
     OP_GET_GLOBAL_LONG,
     OP_SET_GLOBAL,
     OP_SET_GLOBAL_LONG,
+    // Null, Boolean and Comparisons
     OP_NIL,
     OP_TRUE,
     OP_FALSE,
@@ -34,13 +37,19 @@ enum OpCode : uint8_t {
     OP_LESS,
     OP_LESS_EQUAL,
     OP_NEGATE,
+    // Stack Manipulation
     OP_POP,
     OP_POPN,
+    // Binary Operators
     OP_ADD,
     OP_SUBTRACT,
     OP_MULTIPLY,
     OP_DIVIDE,
+    // I/O
     OP_PRINT,
+    // CONTROL FLOW
+    OP_JUMP,
+    OP_JUMP_IF_FALSE,
     OP_RETURN,
 };
 
@@ -71,4 +80,9 @@ inline uint32_t constant_long_idx(OpCode* op) {
     return const_idx;
 }
 
+inline uint16_t twobyte_idx(OpCode* op) {
+    uint8_t* b = reinterpret_cast<uint8_t*>(op);
+    uint16_t twobyte_idx = (b[0] | b[1] << 8);
+    return twobyte_idx;
+}
 #endif //CLOXPP_CHUNK_HPP

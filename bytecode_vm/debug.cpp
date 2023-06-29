@@ -87,6 +87,10 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
         return simple_instruction("OP_DIVIDE", offset);
     case OP_PRINT:
         return simple_instruction("OP_PRINT", offset);
+    case OP_JUMP:
+        return jump_instruction("OP_JUMP", chunk, offset);
+    case OP_JUMP_IF_FALSE:
+        return jump_instruction("OP_JUMP_IF_FALSE", chunk, offset);
     case OP_RETURN:
         return simple_instruction("OP_RETURN", offset);
     default:
@@ -153,4 +157,13 @@ byte_instruction_long(std::string op_name, const Chunk& chunk, size_t offset) {
               << "\t" << std::right << std::setw(5)
               << static_cast<unsigned int>(idx) << std::endl;
     return offset+4;
+}
+size_t
+jump_instruction(std::string op_name, const Chunk& chunk, size_t offset) {
+    uint16_t jump = twobyte_idx(&chunk.opcodes[offset+1]);
+    std::cout << std::setw(16) << std::left << op_name
+              << "\t" << std::right << std::setw(5)
+              << static_cast<unsigned int>(jump) << std::endl;
+    return offset+3;
+
 }

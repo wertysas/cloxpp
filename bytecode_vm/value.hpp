@@ -79,7 +79,7 @@ void print_value(Value value);
 
 // Checks whether a Value is falsy, i.e. considered false in a boolean context
 // In Lox nil and false are the only falsy values every other value/type_ evaluates to true.
-bool check_falsiness(Value value);
+bool is_falsy(Value value);
 
 
 #endif //CLOXPP_VALUE_HPP

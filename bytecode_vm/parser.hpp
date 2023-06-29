@@ -69,11 +69,16 @@ Parser(const std::vector<Token>& tokens,
     void literal(bool assignable);
     void unary(bool assignable);
     void binary(bool assignable);
+    void and_(bool assignable);
+    void or_(bool assignable);
 
     void expression( );
     void parse_precedence(Precedence precedence);
     void declaration( );
     void statement( );
+    void if_statement();
+    void print_statement( );
+    void expression_statement( );
     void block( );
     void begin_scope();
     void end_scope();
@@ -83,14 +88,14 @@ Parser(const std::vector<Token>& tokens,
     void var_declaration( );
     void named_variable(const Token& token, bool assignable);
     uint resolve_local(const Token& token);
-    void print_statement( );
-    void expression_statement( );
     uint identifier_constant(Token const& token);
     ParseRule* parse_rule(TokenType type);
 
     void emit_byte(OpCode opcode);
     void emit_byte(uint token_idx, OpCode opcode);
     void emit_byte_with_index(OpCode op_short, OpCode op_long, uint idx);
+    uint emit_jump(OpCode opcode);
+    void patch_jump(uint offset);
 
     private:
     uint previous_;
