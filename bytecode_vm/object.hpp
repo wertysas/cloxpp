@@ -7,6 +7,7 @@
 
 #include "common.hpp"
 #include "memory.hpp"
+#include <cstring>
 
 using HashType = uint32_t;
 
@@ -49,6 +50,12 @@ HashType hash_string(const char* str, uint length);
 
 struct StringHash {
  constexpr HashType operator()(StringObject* s) const { return s->hash; }
+};
+
+struct StringEqual {
+     bool operator()(StringObject* s1, StringObject* s2) {
+        return strcmp(s1->chars, s2->chars)==0;
+    }
 };
 
 #endif //CLOXPP_OBJECT_HPP

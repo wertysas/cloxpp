@@ -37,6 +37,7 @@ bool operator==(const Value &v1, const Value &v2) {
             auto* str2 = v2.string();
             return str1->length==str2->length && (memcmp(str1->chars, str2->chars, str1->length)==0);
     }
+    return false;
 }
 
 bool operator!=(const Value &v1, const Value &v2) {
