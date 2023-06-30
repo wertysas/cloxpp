@@ -50,6 +50,7 @@ enum OpCode : uint8_t {
     // CONTROL FLOW
     OP_JUMP,
     OP_JUMP_IF_FALSE,
+    OP_JUMP_IF_TRUE,
     OP_RETURN,
 };
 

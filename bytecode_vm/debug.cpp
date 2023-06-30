@@ -44,8 +44,7 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_NOT_EQUAL:
         return simple_instruction("OP_NOT_EQUAL", offset);
     case OP_GREATER:
-        return simple_instruction("OP_GREATER", offset);
-    case OP_GREATER_EQUAL:
+        return simple_instruction("OP_GREATER", offset); case OP_GREATER_EQUAL:
         return simple_instruction("OP_GREATER_EQUAL", offset);
     case OP_LESS:
         return simple_instruction("OP_LESS", offset);
@@ -91,6 +90,8 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
         return jump_instruction("OP_JUMP", chunk, offset);
     case OP_JUMP_IF_FALSE:
         return jump_instruction("OP_JUMP_IF_FALSE", chunk, offset);
+    case OP_JUMP_IF_TRUE:
+        return jump_instruction("OP_JUMP_IF_TRUE", chunk, offset);
     case OP_RETURN:
         return simple_instruction("OP_RETURN", offset);
     default:

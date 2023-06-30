@@ -256,6 +256,13 @@ InterpretResult VirtualMachine::run( ) {
             if (is_falsy(stack_.peek(0)))
                 ip += offset;
         }
+        case OP_JUMP_IF_TRUE: {
+            uint16_t offset = twobyte_idx(ip);
+            ip += 2;
+            if (!is_falsy(stack_.peek(0)))
+                ip += offset;
+            break;
+        }
         case OP_RETURN: {
             return INTERPRET_SUCCESS;
         }

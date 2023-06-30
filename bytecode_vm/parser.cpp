@@ -299,20 +299,22 @@ void Parser::statement( ) {
 
 void Parser::if_statement( ) {
     consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
-    expression( );
+    expression( );    // adds a falsy value to the stack
     consume(TOKEN_RIGHT_PAREN, "Expect '(' after 'if'.");
 
-    uint then_jump = emit_jump(OP_JUMP_IF_FALSE);
-    emit_byte(OP_POP);
-    statement( );
+    uint then_jump =
+        emit_jump(OP_JUMP_IF_FALSE);    // if true jump to after else
+    emit_byte(OP_POP);                  // pops falsy value
+    statement( );                       // executes statement if not false
 
     uint else_jump = emit_jump(OP_JUMP);
-    patch_jump(then_jump);
-    emit_byte(OP_POP);
+    patch_jump(then_jump);    // sets if-false jump to correct location
+    emit_byte(OP_POP);        // pops truthy value
 
-    if (match(TOKEN_ELSE))
-        statement();
-    patch_jump(else_jump);
+    if (match(TOKEN_ELSE)) {    // conditionally executes else statement
+        statement( );
+    }
+    patch_jump(else_jump);    // sets else jump to correct location
 }
 void Parser::print_statement( ) {
     expression( );
@@ -403,15 +405,14 @@ uint Parser::emit_jump(OpCode opcode) {
 }
 
 void Parser::patch_jump(uint offset) {
-    uint jump = chunk_.opcodes.count() - offset - 3;
+    uint jump = chunk_.opcodes.count( ) - offset - 3;
     if (jump > UINT16_MAX) {
         error("Too much code to jump over.");
     }
 
-    OpCode* jumps =  reinterpret_cast<OpCode*>(jump);
+    OpCode* jumps = reinterpret_cast<OpCode*>(jump);
     chunk_.opcodes[offset] = jumps[0];
-    chunk_.opcodes[offset+1] = jumps[1];
-
+    chunk_.opcodes[offset + 1] = jumps[1];
 }
 
 void Parser::block( ) {
@@ -472,14 +473,14 @@ uint Parser::resolve_local(const Token& token) {
 }
 void Parser::and_(bool assignable) {
     uint end_jump = emit_jump(OP_JUMP_IF_FALSE);
-    emit_byte(OP_POP);
-    parse_precedence(PREC_AND);
-    patch_jump(end_jump);
+    // Left value of and_ expression is already on stack and must be popped
+    emit_byte(OP_POP);             // pop left-hand side if true
+    parse_precedence(PREC_AND);    // parse right-hand side of expression
+    patch_jump(end_jump);    // set jump to after second part of and_ expression
+                             // (leaves falsy value on stack)
 }
 void Parser::or_(bool assignable) {
-    uint else_jump = emit_jump(OP_JUMP_IF_FALSE);
-    uint end_jump = emit_jump(OP_JUMP);
-    patch_jump(else_jump);
+    uint end_jump = emit_jump(OP_JUMP_IF_TRUE);
     emit_byte(OP_POP);
     parse_precedence(PREC_OR);
     patch_jump(end_jump);
