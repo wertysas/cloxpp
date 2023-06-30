@@ -77,6 +77,8 @@ Parser(const std::vector<Token>& tokens,
     void declaration( );
     void statement( );
     void if_statement();
+    void while_statement();
+    void for_statement();
     void print_statement( );
     void expression_statement( );
     void block( );
@@ -96,6 +98,7 @@ Parser(const std::vector<Token>& tokens,
     void emit_byte_with_index(OpCode op_short, OpCode op_long, uint idx);
     uint emit_jump(OpCode opcode);
     void patch_jump(uint offset);
+    void emit_loop(uint loop_start);
 
     private:
     uint previous_;
