@@ -202,12 +202,12 @@ InterpretResult VirtualMachine::run( ) {
             break;
         }
         case OP_ADD: {
-            if (stack_.peek(0).is_number( ) && stack_.peek(1).is_number( )) {
-                stack_.push(stack_.pop( ) + stack_.pop( ));
-            } else if (stack_.peek(0).is_string( ) &&
-                       stack_.peek(1).is_string( )) {
-                Value v2 = stack_.pop( );
-                Value v1 = stack_.pop( );
+            Value v2 = stack_.pop( );
+            Value v1 = stack_.pop( );
+            if (v1.is_number( ) && v2.is_number( )) {
+                stack_.push(v1 + v2);
+            } else if (v1.is_string( ) &&
+                       v2.is_string( )) {
                 stack_.push(Value{concatenate(v1.string( ), v2.string( ))});
             } else {
                 runtime_error("Operands must be two numbers or two strings.");
@@ -217,7 +217,9 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_SUBTRACT: {
             BINARY_NUMBER_CHECK( );
-            stack_.push(binary_subtract<Value>(stack_.pop( ), stack_.pop( )));
+            Value v2 = stack_.pop( );
+            Value v1 = stack_.pop( );
+            stack_.push(binary_subtract<Value>(v1, v2));
             break;
         }
         case OP_MULTIPLY: {
@@ -230,8 +232,8 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_DIVIDE: {
             BINARY_NUMBER_CHECK( );
-            // DIVISION  IS NONCOMMUTATIVE and it's not defined which function
-            // in the parameters below is called first. Hence we introduce local
+            // DIVISION  IS NONCOMMUTATIVE, and it's not defined which function
+            // in the parameters below is called first. Hence, we introduce local
             // vars stack_.push(binary_divide<Value>(stack_.pop(),
             // stack_.pop()));
             Value denom = stack_.pop( );
