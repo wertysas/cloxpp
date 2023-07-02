@@ -36,7 +36,7 @@ Parser::Parser(const std::vector<Token>& tokens,
     parse_rules[TOKEN_IDENTIFIER] = {&Parser::variable, nullptr, PREC_NONE};
     parse_rules[TOKEN_STRING] = {&Parser::string, nullptr, PREC_NONE};
     parse_rules[TOKEN_NUMBER] = {&Parser::number, nullptr, PREC_NONE};
-    parse_rules[TOKEN_AND] = {nullptr, nullptr, PREC_NONE};
+    parse_rules[TOKEN_AND] = {nullptr, &Parser::and_, PREC_AND};
     parse_rules[TOKEN_CLASS] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_ELSE] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_FALSE] = {&Parser::literal, nullptr, PREC_NONE};
@@ -44,7 +44,7 @@ Parser::Parser(const std::vector<Token>& tokens,
     parse_rules[TOKEN_FUN] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_IF] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_NIL] = {&Parser::literal, nullptr, PREC_NONE};
-    parse_rules[TOKEN_OR] = {nullptr, nullptr, PREC_NONE};
+    parse_rules[TOKEN_OR] = {nullptr, &Parser::or_, PREC_OR};
     parse_rules[TOKEN_PRINT] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_RETURN] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_SUPER] = {nullptr, nullptr, PREC_NONE};
@@ -68,7 +68,7 @@ void Parser::advance( ) {
         // if (current_ >= tokens_.size( )) {
         //     error(current_, "Out of token range while parsing");
         // }
-        error(current_, current().start);
+        error(current_, current( ).start);
     }
 }
 
@@ -85,7 +85,7 @@ inline void Parser::error(uint idx, const char* message) {
         return;
     panic_mode_ = true;
     error_reporter_.error(tokens_[idx], message);
-    had_error();
+    had_error( );
 }
 
 inline void Parser::error(const char* message) {
@@ -243,8 +243,8 @@ inline void Parser::emit_byte(uint idx, OpCode opcode) {
 }
 
 void Parser::parse_tokens( ) {
-    if (current().type == TOKEN_ERROR) {
-       error(current_, current().start);
+    if (current( ).type == TOKEN_ERROR) {
+        error(current_, current( ).start);
     }
     while (!match(TOKEN_EOF)) {
         declaration( );
@@ -286,6 +286,12 @@ void Parser::var_declaration( ) {
 void Parser::statement( ) {
     if (match(TOKEN_PRINT)) {
         print_statement( );
+    } else if (match(TOKEN_IF)) {
+        if_statement( );
+    } else if (match(TOKEN_WHILE)) {
+        while_statement( );
+    } else if (match(TOKEN_FOR)) {
+        for_statement( );
     } else if (match(TOKEN_LEFT_BRACE)) {
         begin_scope( );
         block( );
@@ -295,16 +301,99 @@ void Parser::statement( ) {
     }
 }
 
+void Parser::if_statement( ) {
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+    expression( );    // adds a falsy value to the stack
+    consume(TOKEN_RIGHT_PAREN, "Expect '(' after 'if'.");
+
+    uint then_jump =
+        emit_jump(OP_JUMP_IF_FALSE);    // if true jump to after else
+    emit_byte(OP_POP);                  // pops falsy value
+    statement( );                       // executes statement if not false
+
+    uint else_jump = emit_jump(OP_JUMP);
+    patch_jump(then_jump);    // sets if-false jump to correct location
+    emit_byte(OP_POP);        // pops truthy value
+
+    if (match(TOKEN_ELSE)) {    // conditionally executes else statement
+        statement( );
+    }
+    patch_jump(else_jump);    // sets else jump to correct location
+}
+
+void Parser::while_statement( ) {
+    uint loop_start = chunk_.opcodes.count( );
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+    expression( );
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+    uint exit_jump = emit_jump(OP_JUMP_IF_FALSE);
+    emit_byte(OP_POP);
+    statement( );
+    emit_loop(loop_start);
+
+
+    patch_jump(exit_jump);
+    emit_byte(OP_POP);
+}
+
+void Parser::for_statement( ) {
+    begin_scope( );
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after for.");
+    // Initializer clause
+    if (match(TOKEN_SEMICOLON)) {
+        // Empty first control stmt (no initializer)
+    } else if (match(TOKEN_VAR)) {
+        var_declaration( );
+    } else {
+        expression_statement( );
+    }
+
+    uint loop_start = chunk_.opcodes.count( );
+    int exit_jump = -1;
+    // Condition clause
+    if (!match(TOKEN_SEMICOLON)) {
+        expression( );
+        consume(TOKEN_SEMICOLON, "Expect ';' after loop condition");
+        // break loop if condition is false
+        exit_jump = emit_jump(OP_JUMP_IF_FALSE);
+        emit_byte(OP_POP);    // pop condition value
+    }
+
+    // Increment clause
+    if (!match(TOKEN_RIGHT_PAREN)) {
+        uint body_jump = emit_jump(OP_JUMP);
+        uint increment_start = chunk_.opcodes.count( );
+        expression( );
+        emit_byte(OP_POP);
+        consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        emit_loop(loop_start);
+        loop_start = increment_start;
+        patch_jump(body_jump);
+    }
+
+    statement( );
+    emit_loop(loop_start);
+    if (exit_jump != -1) {
+        patch_jump(exit_jump);
+        emit_byte(OP_POP);    // pop condition value
+    }
+    end_scope( );
+}
+
 void Parser::print_statement( ) {
     expression( );
     consume(TOKEN_SEMICOLON, "Expect ';' after value.");
     emit_byte(OP_PRINT);
 }
+
 void Parser::expression_statement( ) {
     expression( );
     consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
     emit_byte(OP_POP);
 }
+
 void Parser::synchronize( ) {
     panic_mode_ = false;
 
@@ -375,15 +464,36 @@ void Parser::emit_byte_with_index(OpCode op_normal, OpCode op_long, uint idx) {
         chunk_.opcodes.append(indices[2]);
     }
 }
+
+uint Parser::emit_jump(OpCode opcode) {
+    emit_byte(opcode);
+    chunk_.opcodes.append(static_cast<OpCode>(0xff));
+    chunk_.opcodes.append(static_cast<OpCode>(0xff));
+    return chunk_.opcodes.count( ) - 2;
+}
+
+void Parser::patch_jump(uint offset) {
+    uint jump = chunk_.opcodes.count( ) - offset - 2;
+    if (jump > UINT16_MAX) {
+        error("Too much code to jump over.");
+    }
+
+    OpCode* jumps = reinterpret_cast<OpCode*>(&jump);
+    chunk_.opcodes[offset] = jumps[0];
+    chunk_.opcodes[offset + 1] = jumps[1];
+}
+
 void Parser::block( ) {
     while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
         declaration( );
     }
     consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
 }
+
 void Parser::begin_scope( ) {
     ++scope_.scope_depth;
 }
+
 void Parser::end_scope( ) {
     --scope_.scope_depth;
     // while
@@ -396,6 +506,7 @@ void Parser::end_scope( ) {
     emit_byte(OP_POPN);
     emit_byte(static_cast<OpCode>(n));
 }
+
 void Parser::named_variable(const Token& token, bool assignable) {
     uint idx = resolve_local(token);
     if (idx != UINT_MAX) {
@@ -418,13 +529,37 @@ void Parser::named_variable(const Token& token, bool assignable) {
 
 uint Parser::resolve_local(const Token& token) {
     for (uint i = scope_.local_count; i > 0; i--) {
-        LocalVariable& local = scope_[i-1];
+        LocalVariable& local = scope_[i - 1];
         if (lexemes_equal(token, local.token)) {
             if (local.depth == -1) {
                 error("Can't read local variable in its own initializer.");
             }
-            return i-1;
+            return i - 1;
         }
     }
     return UINT_MAX;
+}
+void Parser::and_(bool assignable) {
+    uint end_jump = emit_jump(OP_JUMP_IF_FALSE);
+    // Left value of and_ expression is already on stack and must be popped
+    emit_byte(OP_POP);             // pop left-hand side if true
+    parse_precedence(PREC_AND);    // parse right-hand side of expression
+    patch_jump(end_jump);    // set jump to after second part of and_ expression
+                             // (leaves falsy value on stack)
+}
+void Parser::or_(bool assignable) {
+    uint end_jump = emit_jump(OP_JUMP_IF_TRUE);
+    emit_byte(OP_POP);
+    parse_precedence(PREC_OR);
+    patch_jump(end_jump);
+}
+void Parser::emit_loop(uint loop_start) {
+    emit_byte(OP_LOOP);
+    uint offset = chunk_.opcodes.count( ) - loop_start + 2;
+    if (offset > UINT16_MAX)
+        error("Loop body too large.");
+
+    OpCode* jumps = reinterpret_cast<OpCode*>(&offset);
+    chunk_.opcodes.append(jumps[0]);
+    chunk_.opcodes.append(jumps[1]);
 }

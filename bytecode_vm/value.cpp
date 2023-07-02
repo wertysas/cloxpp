@@ -90,7 +90,7 @@ void print_object(Value value) {
     }
 }
 
-bool check_falsiness(Value value) {
+bool is_falsy(Value value) {
     return value.is_nil() || (value.is_bool() && !value.bool_value());
 }
 

@@ -24,6 +24,8 @@ size_t byte_instruction(std::string op_name, const Chunk& chunk, size_t offset);
 size_t
 byte_instruction_long(std::string op_name, const Chunk& chunk, size_t offset);
 
+size_t jump_instruction(std::string op_name, const Chunk& chunk, size_t offset, int sign=1);
+
 uint line_number(const Chunk& chunk, size_t offset);
 
 #endif    // CLOXPP_DEBUG_HPP

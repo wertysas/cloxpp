@@ -68,7 +68,8 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_DEFINE_GLOBAL:
         return constant_instruction("OP_DEFINE_GLOBAL", chunk, offset);
     case OP_DEFINE_GLOBAL_LONG:
-        return constant_instruction_long("OP_DEFINE_GLOBAL_LONG", chunk, offset);
+        return constant_instruction_long(
+            "OP_DEFINE_GLOBAL_LONG", chunk, offset);
     case OP_GET_GLOBAL:
         return constant_instruction("OP_GET_GLOBAL", chunk, offset);
     case OP_GET_GLOBAL_LONG:
@@ -87,6 +88,15 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
         return simple_instruction("OP_DIVIDE", offset);
     case OP_PRINT:
         return simple_instruction("OP_PRINT", offset);
+    case OP_JUMP:
+        return jump_instruction("OP_JUMP", chunk, offset);
+    case OP_JUMP_IF_FALSE:
+        return jump_instruction("OP_JUMP_IF_FALSE", chunk, offset);
+    case OP_JUMP_IF_TRUE:
+        return jump_instruction("OP_JUMP_IF_TRUE", chunk, offset);
+    case OP_LOOP: {
+        return jump_instruction("OP_LOOP", chunk, offset, -1);
+    }
     case OP_RETURN:
         return simple_instruction("OP_RETURN", offset);
     default:
@@ -105,9 +115,8 @@ size_t
 constant_instruction(std::string op_name, const Chunk& chunk, size_t offset) {
     uint8_t const_idx = chunk.opcodes[offset + 1];
     Value val = chunk.constants[const_idx];
-    std::cout << std::setw(16) << std::left << op_name
-              << "\t" << std::right << std::setw(5)
-              << static_cast<unsigned int>(const_idx) << "\t";
+    std::cout << std::setw(16) << std::left << op_name << "\t" << std::right
+              << std::setw(5) << static_cast<unsigned int>(const_idx) << "\t";
     print_value(val);
     std::cout << std::endl;
     return offset + 2;
@@ -115,12 +124,13 @@ constant_instruction(std::string op_name, const Chunk& chunk, size_t offset) {
 
 // NOTE:This method makes assumptions of the byte order and only works on little
 // endian machines.
-size_t constant_instruction_long(std::string op_name, const Chunk& chunk, size_t offset) {
+size_t constant_instruction_long(std::string op_name,
+                                 const Chunk& chunk,
+                                 size_t offset) {
     uint8_t* b = reinterpret_cast<uint8_t*>(&chunk.opcodes[offset + 1]);
     uint32_t const_idx = (b[0] | b[1] << 8 | b[2] << 16);
     Value val = chunk.constants[const_idx];
-    std::cout << std::left << op_name
-              << "\t" << std::right << std::setw(5)
+    std::cout << std::left << op_name << "\t" << std::right << std::setw(5)
               << static_cast<unsigned int>(const_idx) << "\t";
     print_value(val);
     std::cout << std::endl;
@@ -139,18 +149,27 @@ uint line_number(const Chunk& chunk, size_t offset) {
 size_t
 byte_instruction(std::string op_name, const Chunk& chunk, size_t offset) {
     uint8_t idx = chunk.opcodes[offset + 1];
-    std::cout << std::setw(16) << std::left << op_name
-              << "\t" << std::right << std::setw(5)
-              << static_cast<unsigned int>(idx) << std::endl;
-    return offset +2 ;
+    std::cout << std::setw(16) << std::left << op_name << "\t" << std::right
+              << std::setw(5) << static_cast<unsigned int>(idx) << std::endl;
+    return offset + 2;
 }
 
 size_t
 byte_instruction_long(std::string op_name, const Chunk& chunk, size_t offset) {
     uint8_t* b = reinterpret_cast<uint8_t*>(&chunk.opcodes[offset + 1]);
     uint32_t idx = (b[0] | b[1] << 8 | b[2] << 16);
-    std::cout << std::setw(16) << std::left << op_name
-              << "\t" << std::right << std::setw(5)
-              << static_cast<unsigned int>(idx) << std::endl;
-    return offset+4;
+    std::cout << std::setw(16) << std::left << op_name << "\t" << std::right
+              << std::setw(5) << static_cast<unsigned int>(idx) << std::endl;
+    return offset + 4;
+}
+size_t jump_instruction(std::string op_name,
+                        const Chunk& chunk,
+                        size_t offset,
+                        int sign) {
+    uint16_t jump = twobyte_idx(&chunk.opcodes[offset + 1]);
+    std::cout << std::setw(16) << std::left << op_name << "\t" << std::right
+              << std::setw(5) << offset << "->"
+              << static_cast<unsigned int>(offset + 3 + sign * jump)
+              << std::endl;
+    return offset + 3;
 }
