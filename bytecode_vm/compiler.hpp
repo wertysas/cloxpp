@@ -26,7 +26,7 @@ struct Scope {
         return operator[](local_count-1);
     }
     bool add_local(Token name) {
-        if (local_count==UINT8_MAX+1) {
+        if (local_count==UINT8_MAX) {
             return false;
         }
         LocalVariable& local = locals[local_count++];
