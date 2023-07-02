@@ -268,6 +268,7 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_LOOP: {
             uint16_t offset = twobyte_idx(ip);
+            ip += 2;
             ip -= offset;
             break;
         }

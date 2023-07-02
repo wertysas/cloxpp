@@ -361,7 +361,7 @@ void Parser::for_statement( ) {
     }
 
     // Increment clause
-    if (match(TOKEN_RIGHT_PAREN)) {
+    if (!match(TOKEN_RIGHT_PAREN)) {
         uint body_jump = emit_jump(OP_JUMP);
         uint increment_start = chunk_.opcodes.count( );
         expression( );
