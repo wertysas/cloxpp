@@ -15,10 +15,20 @@ struct LocalVariable {
     Token token;
 };
 
-struct Scope {
+enum class FunctionType {
+    FUNCTION,
+    SCRIPT
+};
+struct FunctionScope {
     uint8_t local_count;
     uint8_t scope_depth;
+    FunctionObject* function;
+    FunctionType type;
     StaticArray<LocalVariable, UINT8_MAX+1> locals;
+
+    FunctionScope() : local_count(0), scope_depth(0), type(FunctionType::SCRIPT), locals{} {
+        function = new FunctionObject;
+    }
     constexpr LocalVariable& operator[](size_t index) {
         return locals.begin()[index];
     }

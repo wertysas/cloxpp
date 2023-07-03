@@ -37,8 +37,10 @@ class Value {
     inline double number_value() const { return value_.number; }
     inline bool bool_value() { return value_.boolean; }
     inline double number_value() { return value_.number; }
-    inline  Object* object_value() const { return value_.obj; } // note this returns a pointer!
     inline ObjectType object_type() const { return value_.obj->type; }
+    inline  Object* object_value() const { return value_.obj; } // note this returns a pointer!
+    inline StringObject* string() const { return static_cast<StringObject*>(value_.obj); }
+    FunctionObject* function() const {return static_cast<FunctionObject*>(value_.obj); }
 
     // Value type_ checks
     inline ValueType value_type() const { return value_type_; }
@@ -47,11 +49,12 @@ class Value {
     inline bool is_nil() const { return value_type_==VAL_NIL; }
     inline bool is_object() const { return value_type_==VAL_OBJ; }
     inline bool is_object_type(ObjectType obj_type) const { return is_object() && object_type()==obj_type; }
+    inline bool is_string() const { return is_object_type(OBJ_STRING); }
+    inline bool is_function() const { return is_object_type(OBJ_FUNCTION); }
 
     // String functions
-    inline bool is_string() const { return is_object_type(OBJ_STRING); }
-    inline StringObject* string() const { return static_cast<StringObject*>(value_.obj); }
-    inline char* c_string() { return static_cast<StringObject*>(value_.obj)->chars; }
+    inline char* c_string() { return (static_cast<StringObject*>(value_.obj))->chars; }
+
 
     // Binary Operators
     friend Value operator+(const Value& v1, const Value& v2);

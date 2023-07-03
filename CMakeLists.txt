@@ -6,6 +6,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_subdirectory(tests)
 
 # cloxpp is the bytecode intepreter
+
+include_directories(bytecode_vm)
+
 set(SOURCE_FILES_VM
         bytecode_vm/main.cpp
         bytecode_vm/chunk.cpp

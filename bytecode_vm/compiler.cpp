@@ -17,7 +17,7 @@ bool compile(const string &source, Chunk& bytecode) {
     Scanner scanner(source);
     std::vector<Token> tokens = scanner.scan_tokens();
     ErrorReporter error_reporter{};
-    Scope current_scope;
+    FunctionScope current_scope;
 #ifdef DEBUG_PRINT_CODE
     std::cout << "tokens size: " << tokens.size() << std::endl;
     for (auto t: tokens) {

@@ -55,5 +55,5 @@ void* FunctionObject::operator new(size_t) {
     allocate_object<FunctionObject>(OBJ_FUNCTION);
 }
 void FunctionObject::operator delete(void* p, size_t size) {
-    free(p);
+    memory::free<FunctionObject>(p);
 }

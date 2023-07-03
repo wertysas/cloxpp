@@ -41,6 +41,7 @@ void free_objects() {
     }
 }
 
+// TODO: This can be done by specific dtors instead as in FunctionObject
 void free_object(Object *object) {
     switch(object->type) {
         case OBJ_STRING: {

@@ -87,7 +87,9 @@ void print_object(Value value) {
         case OBJ_STRING:
             std::cout << value.c_string();
             break;
-    }
+        case OBJ_FUNCTION:
+            std::cout << "<fn " << value.function()->name->chars << ">";
+        }
 }
 
 bool is_falsy(Value value) {

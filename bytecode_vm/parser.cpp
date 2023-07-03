@@ -9,7 +9,7 @@
 // SWITCH/BRANCH (IF NEEDED)
 Parser::Parser(const std::vector<Token>& tokens,
                Chunk& chunk,
-               Scope& scope,
+               FunctionScope& scope,
                ErrorReporter& error_reporter)
     : previous_(0), current_(0), chunk_(chunk), tokens_(tokens), scope_(scope),
       error_reporter_(error_reporter), parse_rules( ) {

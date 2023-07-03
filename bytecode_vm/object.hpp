@@ -7,7 +7,6 @@
 
 #include "common.hpp"
 #include "memory.hpp"
-#include "chunk.hpp"
 #include <cstring>
 
 using HashType = uint32_t;
@@ -50,13 +49,10 @@ struct FunctionObject : public Object {
     uint arity;
     Chunk chunk;
     StringObject* name;
+    FunctionObject() : arity(0), chunk(), name(nullptr) {}
     void*  operator new(size_t);
     void operator delete(void* p, size_t size);
 };
-
-FunctionObject* new_function();
-
-
 
 
 template<typename T>

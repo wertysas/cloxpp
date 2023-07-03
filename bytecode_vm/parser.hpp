@@ -42,7 +42,7 @@ class Parser {
     public:
 Parser(const std::vector<Token>& tokens,
            Chunk& chunk,
-           Scope& scope,
+           FunctionScope& scope,
            ErrorReporter& error_reporter);
 
     void advance( );
@@ -104,7 +104,7 @@ Parser(const std::vector<Token>& tokens,
     uint previous_;
     uint current_;
     Chunk& chunk_;
-    Scope& scope_;
+    FunctionScope& scope_;
     const std::vector<Token>& tokens_;
     ErrorReporter& error_reporter_;
     bool panic_mode_ = false;

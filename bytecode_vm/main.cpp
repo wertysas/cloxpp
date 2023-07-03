@@ -10,6 +10,7 @@
 #include "debug.hpp"
 #include "virtual_machine.hpp"
 #include "compiler.hpp"
+#include "memory.hpp"
 
 void repl(VirtualMachine& VM);
 
@@ -32,6 +33,7 @@ int main(int argc, char* argv[]) {
         std::cerr << "Usage cloxpp [path]" << std::endl;
         exit(64);
     }
+    free_objects();
 }
 
 void run_file(char* file_path, VirtualMachine& VM) {
