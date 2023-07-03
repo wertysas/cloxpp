@@ -7,11 +7,13 @@
 
 #include "common.hpp"
 #include "memory.hpp"
+#include "chunk.hpp"
 #include <cstring>
 
 using HashType = uint32_t;
 
 enum ObjectType : uint8_t {
+    OBJ_FUNCTION,
     OBJ_STRING
 };
 
@@ -25,6 +27,36 @@ struct StringObject : public Object {
     char* chars;
     uint32_t hash; // implement through mixin/CRTP?
 };
+
+struct StringHash {
+    constexpr HashType operator()(StringObject* s) const { return s->hash; }
+};
+
+struct StringEqual {
+    bool operator()(StringObject* s1, StringObject* s2) {
+        return strcmp(s1->chars, s2->chars)==0;
+    }
+};
+
+StringObject* str_from_chars(const char* chars, uint length);
+StringObject* allocate_string(char* chars, uint length, HashType hash);
+StringObject* concatenate(StringObject* str1, StringObject* str2);
+StringObject* move_string(StringObject* str);
+// FNV-1a
+HashType hash_string(const char* str, uint length);
+
+
+struct FunctionObject : public Object {
+    uint arity;
+    Chunk chunk;
+    StringObject* name;
+    void*  operator new(size_t);
+    void operator delete(void* p, size_t size);
+};
+
+FunctionObject* new_function();
+
+
 
 
 template<typename T>
@@ -40,22 +72,6 @@ T* allocate_object(ObjectType object_type) {
     return reinterpret_cast<T*>(object);
 }
 
-StringObject* str_from_chars(const char* chars, uint length);
-StringObject* allocate_string(char* chars, uint length, HashType hash);
-StringObject* concatenate(StringObject* str1, StringObject* str2);
-StringObject* move_string(StringObject* str);
 
-// FNV-1a
-HashType hash_string(const char* str, uint length);
-
-struct StringHash {
- constexpr HashType operator()(StringObject* s) const { return s->hash; }
-};
-
-struct StringEqual {
-     bool operator()(StringObject* s1, StringObject* s2) {
-        return strcmp(s1->chars, s2->chars)==0;
-    }
-};
 
 #endif //CLOXPP_OBJECT_HPP

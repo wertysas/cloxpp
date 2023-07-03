@@ -180,7 +180,7 @@ TableEntry<Key, T>& HashTable<Key, T, Hash, KeyEqual, A>::find(Key const& key) c
             return tombstone != nullptr ? *tombstone : *entry;
         }
         if (tombstone == nullptr) {    // else we have a tombstone
-            tombstone == entry;
+            tombstone = entry;
         }
         idx = (idx + 1) % capacity_; // possible optimization (mod in hot loop)
     }
