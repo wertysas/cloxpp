@@ -40,9 +40,8 @@ struct ParseRule {
 
 class Parser {
     public:
-Parser(const std::vector<Token>& tokens,
-           Chunk& chunk,
-           FunctionScope& scope,
+    Parser(const std::vector<Token>& tokens,
+           FunctionScope* scope,
            ErrorReporter& error_reporter);
 
     void advance( );
@@ -50,7 +49,7 @@ Parser(const std::vector<Token>& tokens,
     bool match(TokenType type);
     bool check(TokenType type);
 
-    void parse_tokens( );
+    FunctionObject* parse_tokens( );
 
     // Error handling methods
     void error(uint idx, const char* message);
@@ -75,19 +74,23 @@ Parser(const std::vector<Token>& tokens,
     void expression( );
     void parse_precedence(Precedence precedence);
     void declaration( );
+    void function_declaration( );
+    void function(FunctionType fun_type);
+    void var_declaration( );
     void statement( );
-    void if_statement();
-    void while_statement();
-    void for_statement();
+    void if_statement( );
+    void while_statement( );
+    void for_statement( );
     void print_statement( );
     void expression_statement( );
     void block( );
-    void begin_scope();
-    void end_scope();
+    void begin_scope( );
+    void end_scope( );
+    inline void update_scope(FunctionScope* fn_scope) { scope_ = fn_scope; };
+    FunctionObject* close_function_scope( );
     uint parse_variable(const char* error_msg);
     void define_variable(uint global);
-    void declare_variable();
-    void var_declaration( );
+    void declare_variable( );
     void named_variable(const Token& token, bool assignable);
     uint resolve_local(const Token& token);
     uint identifier_constant(Token const& token);
@@ -99,12 +102,12 @@ Parser(const std::vector<Token>& tokens,
     uint emit_jump(OpCode opcode);
     void patch_jump(uint offset);
     void emit_loop(uint loop_start);
+    Chunk& chunk( );
 
     private:
     uint previous_;
     uint current_;
-    Chunk& chunk_;
-    FunctionScope& scope_;
+    FunctionScope* scope_;
     const std::vector<Token>& tokens_;
     ErrorReporter& error_reporter_;
     bool panic_mode_ = false;

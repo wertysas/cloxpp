@@ -6,8 +6,16 @@
 #define CLOXPP_VALUE_HPP
 
 #include "common.hpp"
-#include "object.hpp"
 
+
+class Object;
+class StringObject;
+class FunctionObject;
+
+enum ObjectType : uint8_t {
+    OBJ_FUNCTION,
+    OBJ_STRING
+};
 
 enum ValueType {
     VAL_BOOL,
@@ -29,18 +37,18 @@ class Value {
     Value(bool value) : value_type_(VAL_BOOL), value_() { value_.boolean=value; }
     Value(double number) : value_type_(VAL_NUMBER), value_() { value_.number=number; }
     Value(Object* obj) : value_type_(VAL_OBJ), value_() { value_.obj=obj; }
-    Value(StringObject* string_obj) : value_type_(VAL_OBJ), value_() {
-        value_.obj=static_cast<Object*>(string_obj);
-    }
+    Value(StringObject* string_obj);
+    Value(FunctionObject* function_obj);
+
     // ValueType accessors
     inline bool bool_value() const { return value_.boolean; }
     inline double number_value() const { return value_.number; }
     inline bool bool_value() { return value_.boolean; }
     inline double number_value() { return value_.number; }
-    inline ObjectType object_type() const { return value_.obj->type; }
+    ObjectType object_type() const;
     inline  Object* object_value() const { return value_.obj; } // note this returns a pointer!
-    inline StringObject* string() const { return static_cast<StringObject*>(value_.obj); }
-    FunctionObject* function() const {return static_cast<FunctionObject*>(value_.obj); }
+    StringObject* string() const;
+    FunctionObject* function() const;
 
     // Value type_ checks
     inline ValueType value_type() const { return value_type_; }
@@ -53,7 +61,7 @@ class Value {
     inline bool is_function() const { return is_object_type(OBJ_FUNCTION); }
 
     // String functions
-    inline char* c_string() { return (static_cast<StringObject*>(value_.obj))->chars; }
+    inline char* c_string() const;
 
 
     // Binary Operators

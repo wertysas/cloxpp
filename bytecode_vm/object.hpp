@@ -7,14 +7,11 @@
 
 #include "common.hpp"
 #include "memory.hpp"
+#include "chunk.hpp"
 #include <cstring>
 
 using HashType = uint32_t;
 
-enum ObjectType : uint8_t {
-    OBJ_FUNCTION,
-    OBJ_STRING
-};
 
 struct Object {
     ObjectType type;

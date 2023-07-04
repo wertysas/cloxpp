@@ -45,15 +45,10 @@ HashType hash_string(const char *str, uint length) {
     return hash;
 }
 
-FunctionObject* new_function( ) {
-    FunctionObject* fptr = allocate_object<FunctionObject>(OBJ_FUNCTION);
-    fptr->arity = 0;
-    fptr->name = nullptr;
+void* FunctionObject::operator new(size_t) {
+    return allocate_object<FunctionObject>(OBJ_FUNCTION);
 }
 
-void* FunctionObject::operator new(size_t) {
-    allocate_object<FunctionObject>(OBJ_FUNCTION);
-}
 void FunctionObject::operator delete(void* p, size_t size) {
     memory::free<FunctionObject>(p);
 }
