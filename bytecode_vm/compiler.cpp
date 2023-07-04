@@ -5,7 +5,6 @@
 #include "compiler.hpp"
 #include "scanner.hpp"
 #include "parser.hpp"
-#include "chunk.hpp"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.hpp"

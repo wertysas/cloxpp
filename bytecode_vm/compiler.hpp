@@ -30,6 +30,10 @@ struct FunctionScope {
         : local_count(0), scope_depth(0), enclosing(nullptr),
           type(FunctionType::SCRIPT), locals{ } {
         function = new FunctionObject;
+        LocalVariable& local = locals[local_count++];
+        local.depth = 0;
+        local.token.start = "";
+        local.token.length = 0;
     }
     FunctionScope(FunctionScope* enclosing_, FunctionType type_)
         : local_count(0), scope_depth(0), enclosing(enclosing_),
