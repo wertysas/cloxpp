@@ -13,7 +13,8 @@ Parser::Parser(const std::vector<Token>& tokens,
                ErrorReporter& error_reporter)
     : previous_(0), current_(0), tokens_(tokens), scope_(scope),
       error_reporter_(error_reporter), parse_rules( ) {
-    parse_rules[TOKEN_LEFT_PAREN] = {&Parser::grouping, nullptr, PREC_NONE};
+    parse_rules[TOKEN_LEFT_PAREN] = {
+        &Parser::grouping, &Parser::call, PREC_CALL};
     parse_rules[TOKEN_RIGHT_PAREN] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_LEFT_BRACE] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_RIGHT_BRACE] = {nullptr, nullptr, PREC_NONE};
@@ -107,6 +108,12 @@ void Parser::string(bool assignable) {
 void Parser::grouping(bool assignable) {
     expression( );
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+}
+
+void Parser::call(bool assignable) {
+    uint8_t arg_count = argument_list( );
+    emit_byte(OP_CALL);
+    emit_byte(static_cast<OpCode>(arg_count));
 }
 
 void Parser::literal(bool assignable) {
@@ -282,18 +289,45 @@ void Parser::function_declaration( ) {
 }
 
 void Parser::function(FunctionType fun_type) {
-    FunctionScope function_scope(scope_, fun_type);
+    StringObject* name = str_from_chars(previous( ).start, previous( ).length);
+    FunctionScope function_scope(scope_, name);
     update_scope(&function_scope);
     begin_scope( );    // no end_scope() since scope lifetime only is inside
                        // function
 
     consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
-    consume(TOKEN_LEFT_PAREN, "Expect ')' after parameters.");
+    // function parameters
+    if (!check(TOKEN_RIGHT_PAREN)) {
+        do {
+            scope_->function->arity++;
+            if (scope_->function->arity > 255) {
+                error("Can't have more than 255 parameters");
+            }
+            uint param_constant_idx = parse_variable("Expect parameter name.");
+            define_variable(param_constant_idx);
+        } while (match(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
     consume(TOKEN_LEFT_BRACE, "Expect '{' before function body.");
     block( );
 
     FunctionObject* function = close_function_scope( );
-    chunk().add_constant(Value(function), previous().line);
+    chunk( ).add_constant(Value(function), previous( ).line);
+}
+
+uint8_t Parser::argument_list( ) {
+    uint8_t arg_count = 0;
+    if (!check(TOKEN_RIGHT_PAREN)) {
+        do {
+            expression( );
+            if (arg_count == 255) {
+                error("Can't have more than 255 arguments.");
+            }
+            arg_count++;
+        } while (match(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+    return arg_count;
 }
 
 void Parser::var_declaration( ) {
@@ -314,6 +348,8 @@ void Parser::statement( ) {
         print_statement( );
     } else if (match(TOKEN_IF)) {
         if_statement( );
+    } else if (match(TOKEN_RETURN)) {
+        return_statement( );
     } else if (match(TOKEN_WHILE)) {
         while_statement( );
     } else if (match(TOKEN_FOR)) {
@@ -345,6 +381,20 @@ void Parser::if_statement( ) {
         statement( );
     }
     patch_jump(else_jump);    // sets else jump to correct location
+}
+
+void Parser::return_statement( ) {
+    if (scope_->type == FunctionType::SCRIPT) {
+        error("Can't return from top level code.");
+    }
+    if (match(TOKEN_SEMICOLON)) {
+        emit_return();
+    }
+    else {
+        expression();
+        consume(TOKEN_SEMICOLON, "Expect ';' after return value;");
+        emit_byte(OP_RETURN);
+    }
 }
 
 void Parser::while_statement( ) {
@@ -604,6 +654,7 @@ void Parser::emit_loop(uint loop_start) {
     chunk( ).opcodes.append(jumps[0]);
     chunk( ).opcodes.append(jumps[1]);
 }
-Chunk& Parser::chunk( ) {
-    return scope_->function->chunk;
+void Parser::emit_return( ) {
+    emit_byte(OP_NIL);
+    emit_byte(OP_RETURN);
 }

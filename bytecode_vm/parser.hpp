@@ -48,6 +48,7 @@ class Parser {
     void consume(TokenType type, const char* message);
     bool match(TokenType type);
     bool check(TokenType type);
+    inline Chunk& chunk( ) const { return scope_->function->chunk; }
 
     FunctionObject* parse_tokens( );
 
@@ -58,12 +59,12 @@ class Parser {
 
     inline const Token& previous( ) const { return tokens_[previous_]; }
     inline const Token& current( ) const { return tokens_[current_]; }
-    inline const Token& next_token( );
 
     // Pars Functions
     void number(bool assignable);
     void string(bool assignable);
     void grouping(bool assignable);
+    void call(bool assignable);
     void variable(bool assignable);
     void literal(bool assignable);
     void unary(bool assignable);
@@ -76,9 +77,11 @@ class Parser {
     void declaration( );
     void function_declaration( );
     void function(FunctionType fun_type);
+    uint8_t argument_list();
     void var_declaration( );
     void statement( );
     void if_statement( );
+    void return_statement();
     void while_statement( );
     void for_statement( );
     void print_statement( );
@@ -102,7 +105,7 @@ class Parser {
     uint emit_jump(OpCode opcode);
     void patch_jump(uint offset);
     void emit_loop(uint loop_start);
-    Chunk& chunk( );
+    void emit_return();
 
     private:
     uint previous_;

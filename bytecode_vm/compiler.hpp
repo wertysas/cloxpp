@@ -35,10 +35,11 @@ struct FunctionScope {
         local.token.start = "";
         local.token.length = 0;
     }
-    FunctionScope(FunctionScope* enclosing_, FunctionType type_)
+    FunctionScope(FunctionScope* enclosing_, StringObject* name)
         : local_count(0), scope_depth(0), enclosing(enclosing_),
-          type(type_), locals{ } {
+          type(FunctionType::FUNCTION), locals{ } {
         function = new FunctionObject;
+        function->name = name;
         LocalVariable& local = locals[local_count++];
         local.depth = 0;
         local.token.start = "";

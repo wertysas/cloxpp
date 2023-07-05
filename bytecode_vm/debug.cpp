@@ -97,6 +97,9 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_LOOP: {
         return jump_instruction("OP_LOOP", chunk, offset, -1);
     }
+    case OP_CALL: {
+        return byte_instruction("OP_CALL", chunk, offset);
+    }
     case OP_RETURN:
         return simple_instruction("OP_RETURN", offset);
     default:

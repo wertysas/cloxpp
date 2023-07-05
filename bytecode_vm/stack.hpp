@@ -16,6 +16,7 @@ public:
     void reset();
     T* top() { return top_; }
     T* first() { return elements_; }
+    inline void set_top(T* new_top) { top_ = new_top; }
     T& operator[](size_t idx) const;
     T& operator[](size_t idx);
 
