@@ -353,13 +353,14 @@ void VirtualMachine::runtime_error(const char* fmt, ...) {
     for (int i = frame_count_ - 1; i >= 0; i--) {
         CallFrame& frame = frames_[i];
         FunctionObject* function = frame.function;
-        size_t offset = frame.ip - function->chunk.opcodes.head( ) - 1;
+        //std::cout << frame.function->name->chars << std::endl;
+        size_t offset = frame.ip - function->chunk.opcodes.head( );
         uint line = line_number(function->chunk, offset);
         std::cerr << "[line " << line << "] in ";
         if (function->name == nullptr) {
             std::cerr << "script" << std::endl;
         } else {
-            std::cerr << function->name->chars << std::endl;
+            std::cerr << function->name->chars << "()" << std::endl;
         }
     }
     stack_.reset( );

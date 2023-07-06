@@ -59,11 +59,11 @@ enum OpCode : uint8_t {
 // Struct holding lineinfo for a line including start and end
 // offset of instructions in chunk if start=end, then empty
 struct LineInfo {
-    uint line;
-    uint start;
-    uint end;
+    uint line; // line of tokens parsed to opcode
+    uint start; // first opcode corresponding to line
+    uint end; // last opcode added to chunk
     LineInfo() : line(0), start(0), end(0) {};
-    LineInfo(uint line_, uint start_) : line(line_), start(start_), end(start_+1) {};
+    LineInfo(uint line_, uint start_) : line(line_), start(start_), end(start_) {};
 };
 
 class Chunk {

@@ -139,11 +139,13 @@ size_t constant_instruction_long(std::string op_name,
     std::cout << std::endl;
     return offset + 4;
 }
-
+// Offset is the index of the opcode in the chunk
+// This could be improved by a binary search to
+// achieve O(log2(chunk_size)) instead of O(log2(chunk_size)
 uint line_number(const Chunk& chunk, size_t offset) {
     for (int i = 0; i < chunk.line_numbers.count( ); i++) {
         if (chunk.line_numbers[i].start <= offset &&
-            offset < chunk.line_numbers[i].end) {
+            offset <= chunk.line_numbers[i].end) {
             return chunk.line_numbers[i].line;
         }
     }

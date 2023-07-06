@@ -529,22 +529,22 @@ void Parser::declare_variable( ) {
 void Parser::emit_byte_with_index(OpCode op_normal, OpCode op_long, uint idx) {
     if (idx < UINT8_MAX) {
         chunk( ).add_opcode(op_normal, tokens_[current_ - 1].line);
-        chunk( ).opcodes.append(static_cast<OpCode>(idx));
+        emit_byte(static_cast<OpCode>(idx));
     }
     // Else we assume that idx fits in 24 bits
     else {
         chunk( ).add_opcode(op_long, tokens_[current_ - 1].line);
         OpCode* indices = reinterpret_cast<OpCode*>(&idx);
-        chunk( ).opcodes.append(indices[0]);
-        chunk( ).opcodes.append(indices[1]);
-        chunk( ).opcodes.append(indices[2]);
+        emit_byte(indices[0]);
+        emit_byte(indices[1]);
+        emit_byte(indices[2]);
     }
 }
 
 uint Parser::emit_jump(OpCode opcode) {
     emit_byte(opcode);
-    chunk( ).opcodes.append(static_cast<OpCode>(0xff));
-    chunk( ).opcodes.append(static_cast<OpCode>(0xff));
+    emit_byte(static_cast<OpCode>(0xff));
+    emit_byte(static_cast<OpCode>(0xff));
     return chunk( ).opcodes.count( ) - 2;
 }
 
@@ -584,7 +584,7 @@ void Parser::end_scope( ) {
 }
 
 FunctionObject* Parser::close_function_scope( ) {
-    emit_byte(OP_RETURN);
+    emit_return();
     FunctionObject* function_ptr = scope_->function;
 #ifdef DEBUG_PRINT_CODE
     if (!had_error( )) {
@@ -651,8 +651,8 @@ void Parser::emit_loop(uint loop_start) {
         error("Loop body too large.");
 
     OpCode* jumps = reinterpret_cast<OpCode*>(&offset);
-    chunk( ).opcodes.append(jumps[0]);
-    chunk( ).opcodes.append(jumps[1]);
+    emit_byte(jumps[0]);
+    emit_byte(jumps[1]);
 }
 void Parser::emit_return( ) {
     emit_byte(OP_NIL);
