@@ -66,7 +66,7 @@ Token Scanner::next_token() {
             return handle_string();
     }
     // TODO: FIX ERROR REPORTING FOR ERROR TOKEN (MAYBE INCLUDE ERROR REPORTER)
-    return Token(TOKEN_ERROR, start_, static_cast<uint>(current_-start_), line_);
+    return Token(TOKEN_ERROR, "Unexpected character.", strlen("Unexpected character."), line_);
 }
 
 bool Scanner::match(char expected) {

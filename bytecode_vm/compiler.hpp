@@ -19,8 +19,8 @@ struct LocalVariable {
 
 enum class FunctionType { FUNCTION, SCRIPT };
 struct FunctionScope {
-    uint8_t local_count;
-    uint8_t scope_depth;
+    uint16_t local_count;
+    uint16_t scope_depth;
     FunctionScope* enclosing;
     FunctionObject* function;
     FunctionType type;
@@ -50,7 +50,7 @@ struct FunctionScope {
     }
     constexpr LocalVariable& last( ) { return operator[](local_count - 1); }
     bool add_local(Token name) {
-        if (local_count == UINT8_MAX) {
+        if (local_count == UINT8_MAX+1) {
             return false;
         }
         LocalVariable& local = locals[local_count++];

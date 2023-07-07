@@ -301,7 +301,7 @@ void Parser::function(FunctionType fun_type) {
         do {
             scope_->function->arity++;
             if (scope_->function->arity > 255) {
-                error("Can't have more than 255 parameters");
+                error(current_, "Can't have more than 255 parameters.");
             }
             uint param_constant_idx = parse_variable("Expect parameter name.");
             define_variable(param_constant_idx);
@@ -385,7 +385,7 @@ void Parser::if_statement( ) {
 
 void Parser::return_statement( ) {
     if (scope_->type == FunctionType::SCRIPT) {
-        error("Can't return from top level code.");
+        error("Can't return from top-level code.");
     }
     if (match(TOKEN_SEMICOLON)) {
         emit_return();
@@ -521,7 +521,7 @@ void Parser::declare_variable( ) {
 
 
     if (!scope_->add_local(name)) {
-        error("Too many local variables declared in scope (maximum is 256).");
+        error("Too many local variables in function.");
         return;
     }
 }
