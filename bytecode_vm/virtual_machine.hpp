@@ -11,7 +11,12 @@
 #include "hash_table.hpp"
 #include "object.hpp"
 #include "common.hpp"
+//#include "cpp_module.hpp"
 
+static Value native_clock(uint arg_count, Value* args) {
+    std::cout << "Entered native clock" << std::endl;
+    return Value(static_cast<double>(clock())/CLOCKS_PER_SEC);
+}
 
 using ValueStack = StaticStack<Value, STACK_MAX>;
 enum InterpretResult {
@@ -38,7 +43,9 @@ class VirtualMachine {
     InterpretResult interpret(const string& source);
     InterpretResult run( );
     VirtualMachine( )
-        : stack_( ), global_table_( ) {}
+        : stack_( ), global_table_( ) {
+        define_native_function("clock", native_clock);
+    }
 
     private:
     using table_type = HashTable<StringObject*, Value, StringHash, StringEqual>;
@@ -51,6 +58,7 @@ class VirtualMachine {
     inline CallFrame& current_frame() { return frames_[frame_count_-1]; }
     bool call_value(Value callee, uint arg_count);
     bool call(FunctionObject* function, uint arg_count);
+    void define_native_function(const char* name, NativeFunction native_function);
 };
 
 

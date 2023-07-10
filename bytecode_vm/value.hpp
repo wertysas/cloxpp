@@ -11,9 +11,11 @@
 class Object;
 class StringObject;
 class FunctionObject;
+class NativeObject;
 
 enum ObjectType : uint8_t {
     OBJ_FUNCTION,
+    OBJ_NATIVE,
     OBJ_STRING
 };
 
@@ -32,6 +34,7 @@ union ValueUnion {
 };
 
 class Value {
+    typedef Value (*NativeFunction)(uint arg_count, Value* args);
     public:
     Value() : value_type_(VAL_NIL), value_() { value_.number=0; } // empty ctor for NIL
     Value(bool value) : value_type_(VAL_BOOL), value_() { value_.boolean=value; }
@@ -39,6 +42,7 @@ class Value {
     Value(Object* obj) : value_type_(VAL_OBJ), value_() { value_.obj=obj; }
     Value(StringObject* string_obj);
     Value(FunctionObject* function_obj);
+    Value(NativeObject* native_obj);
 
     // ValueType accessors
     inline bool bool_value() const { return value_.boolean; }
@@ -49,6 +53,7 @@ class Value {
     inline  Object* object_value() const { return value_.obj; } // note this returns a pointer!
     StringObject* string() const;
     FunctionObject* function() const;
+    NativeFunction native_function() const;
 
     // Value type_ checks
     inline ValueType value_type() const { return value_type_; }
@@ -59,7 +64,7 @@ class Value {
     inline bool is_object_type(ObjectType obj_type) const { return is_object() && object_type()==obj_type; }
     inline bool is_string() const { return is_object_type(OBJ_STRING); }
     inline bool is_function() const { return is_object_type(OBJ_FUNCTION); }
-
+    inline bool is_native() const { return is_object_type(OBJ_NATIVE); }
     // String functions
     inline char* c_string() const;
 

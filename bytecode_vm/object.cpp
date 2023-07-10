@@ -52,3 +52,9 @@ void* FunctionObject::operator new(size_t) {
 void FunctionObject::operator delete(void* p, size_t size) {
     memory::free<FunctionObject>(p);
 }
+void* NativeObject::operator new(size_t) {
+    return allocate_object<NativeObject>(OBJ_NATIVE);
+}
+void NativeObject::operator delete(void* p, size_t size) {
+    memory::free<NativeObject>(p);
+}

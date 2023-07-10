@@ -51,6 +51,14 @@ struct FunctionObject : public Object {
     void operator delete(void* p, size_t size);
 };
 
+typedef Value (*NativeFunction)(uint arg_count, Value* args);
+
+struct NativeObject : public Object {
+    NativeFunction function;
+    NativeObject(NativeFunction fn) : function(fn) {}
+    void* operator  new(size_t);
+    void operator delete(void* p, size_t size);
+};
 
 template<typename T>
 T* allocate_object(ObjectType object_type) {

@@ -36,6 +36,6 @@ set(SOURCE_FILES_VM
         bytecode_vm/parser.cpp
         bytecode_vm/error_handling.hpp
         bytecode_vm/error_handling.cpp
-        bytecode_vm/object.cpp bytecode_vm/object.hpp bytecode_vm/hash_table.hpp)
+        bytecode_vm/object.cpp bytecode_vm/object.hpp bytecode_vm/hash_table.hpp bytecode_vm/cpp_module.cpp)
 
-add_executable(cloxpp ${SOURCE_FILES_VM})
+add_executable(cloxpp ${SOURCE_FILES_VM} bytecode_vm/cpp_module.cpp)

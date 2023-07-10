@@ -90,35 +90,50 @@ void print_object(Value value) {
     case OBJ_STRING:
         std::cout << value.c_string( );
         break;
-    case OBJ_FUNCTION:
+    case OBJ_FUNCTION: {
         // print_function
-        FunctionObject* function =  value.function();
+        FunctionObject* function = value.function( );
         if (function->name == nullptr) {
             std::cout << "<script>";
             return;
         }
         std::cout << "<fn " << value.function( )->name->chars << ">";
+        break;
+    }
+    case OBJ_NATIVE:
+        std::cout << "<native fn>";
+        break;
     }
 }
+inline ObjectType Value::object_type( ) const {
+    return value_.obj->type;
+}
+
+inline char* Value::c_string( ) const {
+    return (static_cast<StringObject*>(value_.obj))->chars;
+}
+
 inline StringObject* Value::string( ) const {
     return static_cast<StringObject*>(value_.obj);
 }
 
-inline ObjectType Value::object_type( ) const {
-    return value_.obj->type;
-}
 inline FunctionObject* Value::function( ) const {
     return static_cast<FunctionObject*>(value_.obj);
 }
-inline char* Value::c_string( ) const {
-    return (static_cast<StringObject*>(value_.obj))->chars;
+NativeFunction Value::native_function( ) const {
+    return static_cast<NativeObject*>(value_.obj)->function;
 }
-Value::Value(StringObject* string_obj) : value_type_(VAL_OBJ), value_() {
-    value_.obj=static_cast<Object*>(string_obj);
+
+Value::Value(StringObject* string_obj) : value_type_(VAL_OBJ), value_( ) {
+    value_.obj = static_cast<Object*>(string_obj);
 }
-Value::Value(FunctionObject* function_obj) : value_type_(VAL_OBJ), value_() {
+Value::Value(FunctionObject* function_obj) : value_type_(VAL_OBJ), value_( ) {
     value_.obj = static_cast<Object*>(function_obj);
 }
+Value::Value(NativeObject* native_obj) : value_type_(VAL_OBJ), value_() {
+    value_.obj = static_cast<Object*>(native_obj);
+}
+
 
 bool is_falsy(Value value) {
     return value.is_nil( ) || (value.is_bool( ) && !value.bool_value( ));

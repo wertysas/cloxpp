@@ -16,6 +16,7 @@
 // FIXME 2.
 //  Should accessor of chunk_ be changed to chunk() function in Parser?
 
+
 InterpretResult VirtualMachine::interpret(const string& source) {
     FunctionObject* function = compile(source);
     if (function == nullptr) {
@@ -320,11 +321,25 @@ InterpretResult VirtualMachine::run( ) {
 }
 
 bool VirtualMachine::call_value(Value callee, uint arg_count) {
-    if (callee.is_function( )) {
+    // Don't want 2 slow down with extra if check
+    // if (!callee.is_object()) {
+    //     runtime_error("Can only call functions and classes.");
+    //     return false;
+    // }
+    switch (callee.object_type()) {
+    case OBJ_FUNCTION:
         return call(callee.function( ), arg_count);
+    case OBJ_NATIVE: {
+        NativeFunction native_function = callee.native_function( );
+        Value result = native_function(arg_count, stack_.top( ) - arg_count);
+        stack_.set_top(stack_.top( ) - (arg_count + 1));
+        stack_.push(result);
+        return true;
     }
-    runtime_error("Can only call functions and classes.");
-    return false;
+    default:
+        runtime_error("Can only call functions and classes.");
+        return false;
+    }
 }
 
 bool VirtualMachine::call(FunctionObject* function, uint arg_count) {
@@ -367,6 +382,14 @@ void VirtualMachine::runtime_error(const char* fmt, ...) {
         }
     }
     stack_.reset( );
+}
+void VirtualMachine::define_native_function(const char* name,
+                                            NativeFunction native_function) {
+    stack_.push(Value(str_from_chars(name, static_cast<uint>(strlen(name)))));
+    stack_.push(Value(new NativeFunction(native_function)));
+    global_table_.insert(stack_.peek(1).string(), stack_.peek(0));
+    stack_.pop();
+    stack_.pop();
 }
 
 
