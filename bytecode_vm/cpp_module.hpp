@@ -7,6 +7,6 @@
 
 #include "value.hpp"
 
-static Value native_clock(uint arg_count, Value* args);
+Value native_clock(uint arg_count, Value* args);
 
 #endif    // CLOXPP_CPP_MODULE_HPP
