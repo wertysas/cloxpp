@@ -124,6 +124,8 @@ NativeFunction Value::native_function( ) const {
     return static_cast<NativeObject*>(value_.obj)->function;
 }
 
+// FIXME: This can be cleaned up by using concept + template -> 1 function
+// instead of 3 !!!
 Value::Value(StringObject* string_obj) : value_type_(VAL_OBJ), value_( ) {
     value_.obj = static_cast<Object*>(string_obj);
 }

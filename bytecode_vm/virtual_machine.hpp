@@ -11,12 +11,8 @@
 #include "hash_table.hpp"
 #include "object.hpp"
 #include "common.hpp"
-//#include "cpp_module.hpp"
+#include "cpp_module.hpp"
 
-static Value native_clock(uint arg_count, Value* args) {
-    std::cout << "Entered native clock" << std::endl;
-    return Value(static_cast<double>(clock())/CLOCKS_PER_SEC);
-}
 
 using ValueStack = StaticStack<Value, STACK_MAX>;
 enum InterpretResult {

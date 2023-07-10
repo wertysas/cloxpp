@@ -52,7 +52,6 @@ void run_file(char* file_path, VirtualMachine& VM) {
     if (result == INTERPRET_RUNTIME_ERROR) {
         exit(70);
     }
-    free_objects();
 }
 
 void repl(VirtualMachine& VM) {

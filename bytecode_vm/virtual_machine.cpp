@@ -322,10 +322,10 @@ InterpretResult VirtualMachine::run( ) {
 
 bool VirtualMachine::call_value(Value callee, uint arg_count) {
     // Don't want 2 slow down with extra if check
-    // if (!callee.is_object()) {
-    //     runtime_error("Can only call functions and classes.");
-    //     return false;
-    // }
+    if (!callee.is_object()) {
+         runtime_error("Can only call functions and classes.");
+         return false;
+    }
     switch (callee.object_type()) {
     case OBJ_FUNCTION:
         return call(callee.function( ), arg_count);
@@ -386,7 +386,10 @@ void VirtualMachine::runtime_error(const char* fmt, ...) {
 void VirtualMachine::define_native_function(const char* name,
                                             NativeFunction native_function) {
     stack_.push(Value(str_from_chars(name, static_cast<uint>(strlen(name)))));
-    stack_.push(Value(new NativeFunction(native_function)));
+    stack_.push(Value(new NativeObject(native_function)));
+    // DEBUG
+    Value native_fn = stack_.peek(0);
+    // END OF DEBUG
     global_table_.insert(stack_.peek(1).string(), stack_.peek(0));
     stack_.pop();
     stack_.pop();
