@@ -9,7 +9,7 @@
 // global linked list to keep track of every allocated object
 Object* memory::objects = nullptr;
 
-void free_object(Object *object);
+void free_object(Object* object);
 
 // realloc wrapper used for garbage collection purposes which just as
 // realloc does:
@@ -17,7 +17,7 @@ void free_object(Object *object);
 // 2. if non-null ptr and new_size 0 it frees the memory
 // 3. Else realloc grows/decreases the allocation
 void* reallocate(void* ptr, size_t old_size, size_t new_size) {
-    if (new_size==0) {
+    if (new_size == 0) {
         free(ptr);
         return nullptr;
     }
@@ -28,11 +28,13 @@ void* reallocate(void* ptr, size_t old_size, size_t new_size) {
     //     return res;
     // }
     res = realloc(ptr, new_size);
-    if (res==nullptr) { exit(1); }
+    if (res == nullptr) {
+        exit(1);
+    }
     return res;
 }
 
-void free_objects() {
+void free_objects( ) {
     Object* object = memory::objects;
     while (object != nullptr) {
         Object* next = object->next;
@@ -41,15 +43,22 @@ void free_objects() {
     }
 }
 
-void free_object(Object *object) {
-    switch(object->type) {
-        case OBJ_STRING: {
-            StringObject* string = reinterpret_cast<StringObject*>(object);
-            memory::free_array<char>(string->chars, string->length+1);
-            memory::free<StringObject>(object);
-            break;
-        }
+// TODO: This can be done by specific dtors instead as in FunctionObject
+void free_object(Object* object) {
+    switch (object->type) {
+    case OBJ_STRING: {
+        StringObject* string = reinterpret_cast<StringObject*>(object);
+        memory::free_array<char>(string->chars, string->length + 1);
+        memory::free<StringObject>(object);
+        break;
+    }
+    case OBJ_FUNCTION: {
+        delete static_cast<FunctionObject*>(object);
+        break;
+    }
+    case OBJ_NATIVE: {
+        delete static_cast<NativeObject*>(object);
+        break;
+    }
     }
 }
-
-

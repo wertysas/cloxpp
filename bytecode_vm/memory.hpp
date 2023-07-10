@@ -30,6 +30,9 @@ extern Object* objects;
 
 template<typename T>
 void free(void* ptr) {
+    if constexpr (std::is_base_of_v<Object, T>) {
+
+    }
     reallocate(ptr, sizeof(T), 0);
 }
 

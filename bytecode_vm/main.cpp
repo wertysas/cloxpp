@@ -10,6 +10,7 @@
 #include "debug.hpp"
 #include "virtual_machine.hpp"
 #include "compiler.hpp"
+#include "memory.hpp"
 
 void repl(VirtualMachine& VM);
 
@@ -32,6 +33,7 @@ int main(int argc, char* argv[]) {
         std::cerr << "Usage cloxpp [path]" << std::endl;
         exit(64);
     }
+    free_objects();
 }
 
 void run_file(char* file_path, VirtualMachine& VM) {
@@ -42,7 +44,7 @@ void run_file(char* file_path, VirtualMachine& VM) {
     std::stringstream file_buffer;
     file_buffer << fs.rdbuf();
     std::string source = file_buffer.str( );
-    InterpretResult result = interpret(source, VM);
+    InterpretResult result = VM.interpret(source);
 
     if (result == INTERPRET_COMPILE_ERROR) {
         exit(65);
@@ -73,16 +75,7 @@ void repl(VirtualMachine& VM) {
             }
             break;
         }
-        interpret(input_line, VM);
+        VM.interpret(input_line);
     }
 }
 
-InterpretResult interpret(std::string& source, VirtualMachine& VM) {
-    Chunk bytecode{ };
-    if (!compile(source, bytecode)) {
-        return INTERPRET_COMPILE_ERROR;
-    }
-
-    InterpretResult result = VM.interpret(&bytecode);
-    return result;
-}

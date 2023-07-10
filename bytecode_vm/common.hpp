@@ -17,7 +17,11 @@ using std::string;
 using std::cin;
 using std::cout;
 
-//#define DEBUG_PRINT_CODE
-//#define DEBUG_TRACE_EXECUTION
+
+#define FRAMES_MAX 64 // maximum call frame size
+#define STACK_MAX (FRAMES_MAX*(UINT8_MAX+1)) // default stack size
+
+// #define DEBUG_PRINT_CODE
+// #define DEBUG_TRACE_EXECUTION
 
 #endif //CLOXPP_COMMON_HPP

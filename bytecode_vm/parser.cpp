@@ -4,16 +4,17 @@
 
 #include <climits>
 #include "parser.hpp"
+#include "debug.hpp"
 
 // TODO: MEASURE PERFORMANCE IMPACT OF USING TABLE BASED FUNCTION LOOKUP VS
 // SWITCH/BRANCH (IF NEEDED)
 Parser::Parser(const std::vector<Token>& tokens,
-               Chunk& chunk,
-               Scope& scope,
+               FunctionScope* scope,
                ErrorReporter& error_reporter)
-    : previous_(0), current_(0), chunk_(chunk), tokens_(tokens), scope_(scope),
+    : previous_(0), current_(0), tokens_(tokens), scope_(scope),
       error_reporter_(error_reporter), parse_rules( ) {
-    parse_rules[TOKEN_LEFT_PAREN] = {&Parser::grouping, nullptr, PREC_NONE};
+    parse_rules[TOKEN_LEFT_PAREN] = {
+        &Parser::grouping, &Parser::call, PREC_CALL};
     parse_rules[TOKEN_RIGHT_PAREN] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_LEFT_BRACE] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_RIGHT_BRACE] = {nullptr, nullptr, PREC_NONE};
@@ -85,7 +86,6 @@ inline void Parser::error(uint idx, const char* message) {
         return;
     panic_mode_ = true;
     error_reporter_.error(tokens_[idx], message);
-    had_error( );
 }
 
 inline void Parser::error(const char* message) {
@@ -97,17 +97,23 @@ inline void Parser::error(const char* message) {
 
 void Parser::number(bool assignable) {
     Value val{strtod(previous( ).start, nullptr)};
-    chunk_.add_constant(val, previous( ).line);
+    chunk( ).add_constant(val, previous( ).line);
 }
 
 void Parser::string(bool assignable) {
     Value val{str_from_chars(previous( ).start + 1, previous( ).length - 2)};
-    chunk_.add_constant(val, previous( ).line);
+    chunk( ).add_constant(val, previous( ).line);
 }
 
 void Parser::grouping(bool assignable) {
     expression( );
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+}
+
+void Parser::call(bool assignable) {
+    uint8_t arg_count = argument_list( );
+    emit_byte(OP_CALL);
+    emit_byte(static_cast<OpCode>(arg_count));
 }
 
 void Parser::literal(bool assignable) {
@@ -218,7 +224,7 @@ uint Parser::parse_variable(const char* error_msg) {
     consume(TOKEN_IDENTIFIER, error_msg);
 
     declare_variable( );
-    if (scope_.scope_depth > 0)
+    if (scope_->scope_depth > 0)
         return 0;
 
 
@@ -235,21 +241,24 @@ inline ParseRule* Parser::parse_rule(TokenType type) {
 }
 
 inline void Parser::emit_byte(OpCode opcode) {
-    chunk_.add_opcode(opcode, tokens_[current_ - 1].line);
+    chunk( ).add_opcode(opcode, tokens_[current_ - 1].line);
 }
 
 inline void Parser::emit_byte(uint idx, OpCode opcode) {
-    chunk_.add_opcode(opcode, tokens_[idx].line);
+    chunk( ).add_opcode(opcode, tokens_[idx].line);
 }
 
-void Parser::parse_tokens( ) {
+FunctionObject* Parser::parse_tokens( ) {
     if (current( ).type == TOKEN_ERROR) {
         error(current_, current( ).start);
     }
     while (!match(TOKEN_EOF)) {
         declaration( );
     }
+
+    return close_function_scope( );
 }
+
 bool Parser::match(TokenType type) {
     if (!(current( ).type == type))
         return false;
@@ -261,13 +270,64 @@ inline bool Parser::check(TokenType type) {
     return current( ).type == type;
 }
 void Parser::declaration( ) {
-    if (match(TOKEN_VAR)) {
+    if (match(TOKEN_FUN)) {
+        function_declaration( );
+    } else if (match(TOKEN_VAR)) {
         var_declaration( );
     } else {
         statement( );
     }
     if (panic_mode_)
         synchronize( );
+}
+
+void Parser::function_declaration( ) {
+    uint8_t global = parse_variable("Expect function name.");
+    scope_->mark_initialized( );
+    function(FunctionType::FUNCTION);
+    define_variable(global);
+}
+
+void Parser::function(FunctionType fun_type) {
+    StringObject* name = str_from_chars(previous( ).start, previous( ).length);
+    FunctionScope function_scope(scope_, name);
+    update_scope(&function_scope);
+    begin_scope( );    // no end_scope() since scope lifetime only is inside
+                       // function
+
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+    // function parameters
+    if (!check(TOKEN_RIGHT_PAREN)) {
+        do {
+            scope_->function->arity++;
+            if (scope_->function->arity > 255) {
+                error(current_, "Can't have more than 255 parameters.");
+            }
+            uint param_constant_idx = parse_variable("Expect parameter name.");
+            define_variable(param_constant_idx);
+        } while (match(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+    consume(TOKEN_LEFT_BRACE, "Expect '{' before function body.");
+    block( );
+
+    FunctionObject* function = close_function_scope( );
+    chunk( ).add_constant(Value(function), previous( ).line);
+}
+
+uint8_t Parser::argument_list( ) {
+    uint8_t arg_count = 0;
+    if (!check(TOKEN_RIGHT_PAREN)) {
+        do {
+            expression( );
+            if (arg_count == 255) {
+                error("Can't have more than 255 arguments.");
+            }
+            arg_count++;
+        } while (match(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+    return arg_count;
 }
 
 void Parser::var_declaration( ) {
@@ -288,6 +348,8 @@ void Parser::statement( ) {
         print_statement( );
     } else if (match(TOKEN_IF)) {
         if_statement( );
+    } else if (match(TOKEN_RETURN)) {
+        return_statement( );
     } else if (match(TOKEN_WHILE)) {
         while_statement( );
     } else if (match(TOKEN_FOR)) {
@@ -321,8 +383,22 @@ void Parser::if_statement( ) {
     patch_jump(else_jump);    // sets else jump to correct location
 }
 
+void Parser::return_statement( ) {
+    if (scope_->type == FunctionType::SCRIPT) {
+        error("Can't return from top-level code.");
+    }
+    if (match(TOKEN_SEMICOLON)) {
+        emit_return();
+    }
+    else {
+        expression();
+        consume(TOKEN_SEMICOLON, "Expect ';' after return value;");
+        emit_byte(OP_RETURN);
+    }
+}
+
 void Parser::while_statement( ) {
-    uint loop_start = chunk_.opcodes.count( );
+    uint loop_start = chunk( ).opcodes.count( );
     consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
     expression( );
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
@@ -349,7 +425,7 @@ void Parser::for_statement( ) {
         expression_statement( );
     }
 
-    uint loop_start = chunk_.opcodes.count( );
+    uint loop_start = chunk( ).opcodes.count( );
     int exit_jump = -1;
     // Condition clause
     if (!match(TOKEN_SEMICOLON)) {
@@ -363,7 +439,7 @@ void Parser::for_statement( ) {
     // Increment clause
     if (!match(TOKEN_RIGHT_PAREN)) {
         uint body_jump = emit_jump(OP_JUMP);
-        uint increment_start = chunk_.opcodes.count( );
+        uint increment_start = chunk( ).opcodes.count( );
         expression( );
         emit_byte(OP_POP);
         consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
@@ -416,25 +492,25 @@ void Parser::synchronize( ) {
     }
 }
 uint Parser::identifier_constant(const Token& token) {
-    return chunk_.constants.idx_append(
+    return chunk( ).constants.idx_append(
         Value(str_from_chars(token.start, token.length)));
 }
 void Parser::define_variable(uint idx) {
-    if (scope_.scope_depth > 0) {
-        scope_.mark_initialized( );
+    if (scope_->scope_depth > 0) {
+        scope_->mark_initialized( );
         return;
     }
     emit_byte_with_index(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, idx);
 }
 
 void Parser::declare_variable( ) {
-    if (scope_.scope_depth == 0)
+    if (scope_->scope_depth == 0)
         return;
 
     Token name = previous( );
-    for (int i = static_cast<int>(scope_.local_count) - 1; i >= 0; i--) {
-        LocalVariable local = scope_.locals[i];
-        if (local.depth != -1 && local.depth < scope_.scope_depth) {
+    for (int i = static_cast<int>(scope_->local_count) - 1; i >= 0; i--) {
+        LocalVariable local = scope_->locals[i];
+        if (local.depth != -1 && local.depth < scope_->scope_depth) {
             break;
         }
 
@@ -444,43 +520,43 @@ void Parser::declare_variable( ) {
     }
 
 
-    if (!scope_.add_local(name)) {
-        error("Too many local variables declared in scope (maximum is 256).");
+    if (!scope_->add_local(name)) {
+        error("Too many local variables in function.");
         return;
     }
 }
 
 void Parser::emit_byte_with_index(OpCode op_normal, OpCode op_long, uint idx) {
     if (idx < UINT8_MAX) {
-        chunk_.add_opcode(op_normal, tokens_[current_ - 1].line);
-        chunk_.opcodes.append(static_cast<OpCode>(idx));
+        chunk( ).add_opcode(op_normal, tokens_[current_ - 1].line);
+        emit_byte(static_cast<OpCode>(idx));
     }
     // Else we assume that idx fits in 24 bits
     else {
-        chunk_.add_opcode(op_long, tokens_[current_ - 1].line);
+        chunk( ).add_opcode(op_long, tokens_[current_ - 1].line);
         OpCode* indices = reinterpret_cast<OpCode*>(&idx);
-        chunk_.opcodes.append(indices[0]);
-        chunk_.opcodes.append(indices[1]);
-        chunk_.opcodes.append(indices[2]);
+        emit_byte(indices[0]);
+        emit_byte(indices[1]);
+        emit_byte(indices[2]);
     }
 }
 
 uint Parser::emit_jump(OpCode opcode) {
     emit_byte(opcode);
-    chunk_.opcodes.append(static_cast<OpCode>(0xff));
-    chunk_.opcodes.append(static_cast<OpCode>(0xff));
-    return chunk_.opcodes.count( ) - 2;
+    emit_byte(static_cast<OpCode>(0xff));
+    emit_byte(static_cast<OpCode>(0xff));
+    return chunk( ).opcodes.count( ) - 2;
 }
 
 void Parser::patch_jump(uint offset) {
-    uint jump = chunk_.opcodes.count( ) - offset - 2;
+    uint jump = chunk( ).opcodes.count( ) - offset - 2;
     if (jump > UINT16_MAX) {
         error("Too much code to jump over.");
     }
 
     OpCode* jumps = reinterpret_cast<OpCode*>(&jump);
-    chunk_.opcodes[offset] = jumps[0];
-    chunk_.opcodes[offset + 1] = jumps[1];
+    chunk( ).opcodes[offset] = jumps[0];
+    chunk( ).opcodes[offset + 1] = jumps[1];
 }
 
 void Parser::block( ) {
@@ -491,20 +567,35 @@ void Parser::block( ) {
 }
 
 void Parser::begin_scope( ) {
-    ++scope_.scope_depth;
+    ++scope_->scope_depth;
 }
 
 void Parser::end_scope( ) {
-    --scope_.scope_depth;
+    --scope_->scope_depth;
     // while
     uint n = 0;
-    while (scope_.local_count > 0 &&
-           scope_.last( ).depth > scope_.scope_depth) {
+    while (scope_->local_count > 0 &&
+           scope_->last( ).depth > scope_->scope_depth) {
         ++n;
-        --scope_.local_count;
+        --scope_->local_count;
     }
     emit_byte(OP_POPN);
     emit_byte(static_cast<OpCode>(n));
+}
+
+FunctionObject* Parser::close_function_scope( ) {
+    emit_return();
+    FunctionObject* function_ptr = scope_->function;
+#ifdef DEBUG_PRINT_CODE
+    if (!had_error( )) {
+        disassemble_chunk(function_ptr->chunk,
+                          function_ptr->name != nullptr
+                              ? function_ptr->name->chars
+                              : "<script>");
+    }
+#endif
+    scope_ = scope_->enclosing;
+    return function_ptr;
 }
 
 void Parser::named_variable(const Token& token, bool assignable) {
@@ -528,8 +619,8 @@ void Parser::named_variable(const Token& token, bool assignable) {
 }
 
 uint Parser::resolve_local(const Token& token) {
-    for (uint i = scope_.local_count; i > 0; i--) {
-        LocalVariable& local = scope_[i - 1];
+    for (uint i = scope_->local_count; i > 0; i--) {
+        LocalVariable& local = (*scope_)[i - 1];
         if (lexemes_equal(token, local.token)) {
             if (local.depth == -1) {
                 error("Can't read local variable in its own initializer.");
@@ -555,11 +646,15 @@ void Parser::or_(bool assignable) {
 }
 void Parser::emit_loop(uint loop_start) {
     emit_byte(OP_LOOP);
-    uint offset = chunk_.opcodes.count( ) - loop_start + 2;
+    uint offset = chunk( ).opcodes.count( ) - loop_start + 2;
     if (offset > UINT16_MAX)
         error("Loop body too large.");
 
     OpCode* jumps = reinterpret_cast<OpCode*>(&offset);
-    chunk_.opcodes.append(jumps[0]);
-    chunk_.opcodes.append(jumps[1]);
+    emit_byte(jumps[0]);
+    emit_byte(jumps[1]);
+}
+void Parser::emit_return( ) {
+    emit_byte(OP_NIL);
+    emit_byte(OP_RETURN);
 }

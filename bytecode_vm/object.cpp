@@ -45,3 +45,16 @@ HashType hash_string(const char *str, uint length) {
     return hash;
 }
 
+void* FunctionObject::operator new(size_t) {
+    return allocate_object<FunctionObject>(OBJ_FUNCTION);
+}
+
+void FunctionObject::operator delete(void* p, size_t size) {
+    memory::free<FunctionObject>(p);
+}
+void* NativeObject::operator new(size_t) {
+    return allocate_object<NativeObject>(OBJ_NATIVE);
+}
+void NativeObject::operator delete(void* p, size_t size) {
+    memory::free<NativeObject>(p);
+}

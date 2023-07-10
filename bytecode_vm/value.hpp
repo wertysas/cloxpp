@@ -6,8 +6,18 @@
 #define CLOXPP_VALUE_HPP
 
 #include "common.hpp"
-#include "object.hpp"
 
+
+class Object;
+class StringObject;
+class FunctionObject;
+class NativeObject;
+
+enum ObjectType : uint8_t {
+    OBJ_FUNCTION,
+    OBJ_NATIVE,
+    OBJ_STRING
+};
 
 enum ValueType {
     VAL_BOOL,
@@ -24,21 +34,26 @@ union ValueUnion {
 };
 
 class Value {
+    typedef Value (*NativeFunction)(uint arg_count, Value* args);
     public:
     Value() : value_type_(VAL_NIL), value_() { value_.number=0; } // empty ctor for NIL
     Value(bool value) : value_type_(VAL_BOOL), value_() { value_.boolean=value; }
     Value(double number) : value_type_(VAL_NUMBER), value_() { value_.number=number; }
     Value(Object* obj) : value_type_(VAL_OBJ), value_() { value_.obj=obj; }
-    Value(StringObject* string_obj) : value_type_(VAL_OBJ), value_() {
-        value_.obj=static_cast<Object*>(string_obj);
-    }
+    Value(StringObject* string_obj);
+    Value(FunctionObject* function_obj);
+    Value(NativeObject* native_obj);
+
     // ValueType accessors
     inline bool bool_value() const { return value_.boolean; }
     inline double number_value() const { return value_.number; }
     inline bool bool_value() { return value_.boolean; }
     inline double number_value() { return value_.number; }
+    ObjectType object_type() const;
     inline  Object* object_value() const { return value_.obj; } // note this returns a pointer!
-    inline ObjectType object_type() const { return value_.obj->type; }
+    StringObject* string() const;
+    FunctionObject* function() const;
+    NativeFunction native_function() const;
 
     // Value type_ checks
     inline ValueType value_type() const { return value_type_; }
@@ -47,11 +62,12 @@ class Value {
     inline bool is_nil() const { return value_type_==VAL_NIL; }
     inline bool is_object() const { return value_type_==VAL_OBJ; }
     inline bool is_object_type(ObjectType obj_type) const { return is_object() && object_type()==obj_type; }
-
-    // String functions
     inline bool is_string() const { return is_object_type(OBJ_STRING); }
-    inline StringObject* string() const { return static_cast<StringObject*>(value_.obj); }
-    inline char* c_string() { return static_cast<StringObject*>(value_.obj)->chars; }
+    inline bool is_function() const { return is_object_type(OBJ_FUNCTION); }
+    inline bool is_native() const { return is_object_type(OBJ_NATIVE); }
+    // String functions
+    inline char* c_string() const;
+
 
     // Binary Operators
     friend Value operator+(const Value& v1, const Value& v2);
