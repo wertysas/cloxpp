@@ -8,6 +8,8 @@
 #include "binary_operators.hpp"
 #include "virtual_machine.hpp"
 #include "compiler.hpp"
+#include "object.hpp"
+#include "value.hpp"
 
 // FIXME 1.
 //  Fix proper initialization of objects s.t. only 1 Scanner and Parser are
@@ -24,10 +26,6 @@ InterpretResult VirtualMachine::interpret(const string& source) {
     }
 
     stack_.push(Value(function));
-    // CallFrame& frame = frames_[frame_count_++];
-    // frame->function = function;
-    // frame->ip = function->chunk.opcodes.head( );
-    // frame->slots = stack_.first( );
     call(function, 0);
 
     return run( );
@@ -35,9 +33,9 @@ InterpretResult VirtualMachine::interpret(const string& source) {
 
 // Macro for reading bytes with instruction pointer
 // we use a macro for readability and to force inlining
-#define READ_BYTE( ) (*frame->ip++)
+#define READ_BYTE( ) (*frame.ip++)
 #define READ_CONSTANT( ) \
-    (frame->function->chunk.constants[static_cast<uint8_t>(READ_BYTE( ))])
+    (frame.function->chunk.constants[static_cast<uint8_t>(READ_BYTE( ))])
 // MACROS for type_ checks 2 force inlining
 #define BINARY_NUMBER_CHECK( )                                              \
     do {                                                                    \
@@ -49,7 +47,20 @@ InterpretResult VirtualMachine::interpret(const string& source) {
 
 
 InterpretResult VirtualMachine::run( ) {
-    CallFrame* frame = &frames_[frame_count_ - 1];
+    CallFrame* current_frame = &frames_[frame_count_ - 1];
+    CallFrame frame = *current_frame;
+
+    // Using these 2 lambda has seriously negative performance impact!
+    auto update_frame = [&] () {
+        *current_frame = frame;
+        current_frame = &frames_[frame_count_ - 1];
+        frame = *current_frame;
+    };
+    // auto update_current_frame = [&] () {
+    //   *current_frame = frame;
+
+    // };
+
     for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
         std::cout << "STACK:" << std ::endl;
@@ -70,9 +81,9 @@ InterpretResult VirtualMachine::run( ) {
             break;
         }
         case OP_CONSTANT_LONG: {
-            uint32_t const_idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
-            Value constant = frame->function->chunk.constants[const_idx];
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            Value constant = frame.function->chunk.constants[const_idx];
             stack_.push(constant);
             break;
         }
@@ -144,24 +155,24 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_GET_LOCAL: {
             uint8_t idx = READ_BYTE( );
-            stack_.push(frame->slots[idx]);
+            stack_.push(frame.slots[idx]);
             break;
         }
         case OP_GET_LOCAL_LONG: {
-            uint32_t idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
-            stack_.push(frame->slots[idx]);
+            uint32_t idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            stack_.push(frame.slots[idx]);
             break;
         }
         case OP_SET_LOCAL: {
             uint8_t idx = READ_BYTE( );
-            frame->slots[idx] = stack_.peek(0);
+            frame.slots[idx] = stack_.peek(0);
             break;
         }
         case OP_SET_LOCAL_LONG: {
-            uint32_t idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
-            frame->slots[idx] = stack_.peek(0);
+            uint32_t idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            frame.slots[idx] = stack_.peek(0);
             break;
         }
         case OP_DEFINE_GLOBAL: {
@@ -171,10 +182,10 @@ InterpretResult VirtualMachine::run( ) {
             break;
         }
         case OP_DEFINE_GLOBAL_LONG: {
-            uint32_t const_idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
             StringObject* name =
-                frame->function->chunk.constants[const_idx].string( );
+                frame.function->chunk.constants[const_idx].string( );
             global_table_.insert(name, stack_.peek(0));
             stack_.pop( );    // late pop GC related
             break;
@@ -190,10 +201,10 @@ InterpretResult VirtualMachine::run( ) {
             break;
         }
         case OP_GET_GLOBAL_LONG: {
-            uint32_t const_idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
             StringObject* name =
-                frame->function->chunk.constants[const_idx].string( );
+                frame.function->chunk.constants[const_idx].string( );
             entry_type& entry = global_table_.find(name);
             if (entry.type( ) != EntryType::USED) {
                 runtime_error("Undefined variable '%s'.", name->chars);
@@ -213,10 +224,10 @@ InterpretResult VirtualMachine::run( ) {
             break;
         }
         case OP_SET_GLOBAL_LONG: {
-            uint32_t const_idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
             StringObject* name =
-                frame->function->chunk.constants[const_idx].string( );
+                frame.function->chunk.constants[const_idx].string( );
             entry_type& entry = global_table_.find(name);
             if (entry.type( ) != EntryType::USED) {
                 runtime_error("Undefined variable '%s'.", name->chars);
@@ -250,8 +261,6 @@ InterpretResult VirtualMachine::run( ) {
             Value v2 = stack_.pop( );
             Value v1 = stack_.pop( );
             stack_.push(binary_multiply<Value>(v1, v2));
-            // stack_.push(binary_multframe->iply<Value>(stack_.pop(),
-            // stack_.pop()));
             break;
         }
         case OP_DIVIDE: {
@@ -271,29 +280,29 @@ InterpretResult VirtualMachine::run( ) {
             break;
         }
         case OP_JUMP: {
-            uint16_t offset = twobyte_idx(frame->ip);
-            frame->ip += 2;
-            frame->ip += offset;
+            uint16_t offset = twobyte_idx(frame.ip);
+            frame.ip += 2;
+            frame.ip += offset;
             break;
         }
         case OP_JUMP_IF_FALSE: {
-            uint16_t offset = twobyte_idx(frame->ip);
-            frame->ip += 2;
+            uint16_t offset = twobyte_idx(frame.ip);
+            frame.ip += 2;
             if (is_falsy(stack_.peek(0)))
-                frame->ip += offset;
+                frame.ip += offset;
             break;
         }
         case OP_JUMP_IF_TRUE: {
-            uint16_t offset = twobyte_idx(frame->ip);
-            frame->ip += 2;
+            uint16_t offset = twobyte_idx(frame.ip);
+            frame.ip += 2;
             if (!is_falsy(stack_.peek(0)))
-                frame->ip += offset;
+                frame.ip += offset;
             break;
         }
         case OP_LOOP: {
-            uint16_t offset = twobyte_idx(frame->ip);
-            frame->ip += 2;
-            frame->ip -= offset;
+            uint16_t offset = twobyte_idx(frame.ip);
+            frame.ip += 2;
+            frame.ip -= offset;
             break;
         }
         case OP_CALL: {
@@ -301,7 +310,10 @@ InterpretResult VirtualMachine::run( ) {
             if (!call_value(stack_.peek(arg_count), arg_count)) {
                 return INTERPRET_RUNTIME_ERROR;
             }
-            frame = &frames_[frame_count_ - 1];
+            // *current_frame = frame;
+            // current_frame = &frames_[frame_count_ - 1];
+            // frame = *current_frame;
+            update_frame();
             break;
         }
         case OP_RETURN: {
@@ -311,9 +323,13 @@ InterpretResult VirtualMachine::run( ) {
                 stack_.pop( );
                 return INTERPRET_SUCCESS;
             }
-            stack_.set_top(frame->slots);
+            stack_.set_top(frame.slots);
             stack_.push(result);
-            frame = &frames_[frame_count_ - 1];
+
+            // *current_frame = frame;
+            // current_frame = &frames_[frame_count_ - 1];
+            // frame = *current_frame;
+            update_frame();
             break;
         }
         }
@@ -387,9 +403,6 @@ void VirtualMachine::define_native_function(const char* name,
                                             NativeFunction native_function) {
     stack_.push(Value(str_from_chars(name, static_cast<uint>(strlen(name)))));
     stack_.push(Value(new NativeObject(native_function)));
-    // DEBUG
-    Value native_fn = stack_.peek(0);
-    // END OF DEBUG
     global_table_.insert(stack_.peek(1).string(), stack_.peek(0));
     stack_.pop();
     stack_.pop();

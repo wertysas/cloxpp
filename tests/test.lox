@@ -3,6 +3,14 @@ fun fib(n) {
   return fib(n - 2) + fib(n - 1);
 }
 
+
 var start = clock();
-print fib(5);
-print clock() - start;
+var sum = 0;
+for (var i = 0; i<10; i=i+1) {
+start = clock();
+print fib(30);
+sum = sum + clock()-start;
+}
+
+print("Average over 10 iterations: ");
+print(sum/10);
