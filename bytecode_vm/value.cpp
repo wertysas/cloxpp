@@ -105,19 +105,20 @@ void print_object(Value value) {
         break;
     }
 }
-inline ObjectType Value::object_type( ) const {
+
+ObjectType Value::object_type( ) const {
     return value_.obj->type;
 }
 
-inline char* Value::c_string( ) const {
+char* Value::c_string( ) const {
     return (static_cast<StringObject*>(value_.obj))->chars;
 }
 
-inline StringObject* Value::string( ) const {
+StringObject* Value::string( ) const {
     return static_cast<StringObject*>(value_.obj);
 }
 
-inline FunctionObject* Value::function( ) const {
+FunctionObject* Value::function( ) const {
     return static_cast<FunctionObject*>(value_.obj);
 }
 NativeFunction Value::native_function( ) const {

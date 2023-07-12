@@ -8,6 +8,8 @@
 #include "binary_operators.hpp"
 #include "virtual_machine.hpp"
 #include "compiler.hpp"
+#include "object.hpp"
+#include "value.hpp"
 
 // FIXME 1.
 //  Fix proper initialization of objects s.t. only 1 Scanner and Parser are
@@ -24,10 +26,6 @@ InterpretResult VirtualMachine::interpret(const string& source) {
     }
 
     stack_.push(Value(function));
-    // CallFrame& frame = frames_[frame_count_++];
-    // frame->function = function;
-    // frame->ip = function->chunk.opcodes.head( );
-    // frame->slots = stack_.first( );
     call(function, 0);
 
     return run( );
@@ -35,9 +33,9 @@ InterpretResult VirtualMachine::interpret(const string& source) {
 
 // Macro for reading bytes with instruction pointer
 // we use a macro for readability and to force inlining
-#define READ_BYTE( ) (*frame->ip++)
+#define READ_BYTE( ) (*frame.ip++)
 #define READ_CONSTANT( ) \
-    (frame->function->chunk.constants[static_cast<uint8_t>(READ_BYTE( ))])
+    (frame.function->chunk.constants[static_cast<uint8_t>(READ_BYTE( ))])
 // MACROS for type_ checks 2 force inlining
 #define BINARY_NUMBER_CHECK( )                                              \
     do {                                                                    \
@@ -49,7 +47,20 @@ InterpretResult VirtualMachine::interpret(const string& source) {
 
 
 InterpretResult VirtualMachine::run( ) {
-    CallFrame* frame = &frames_[frame_count_ - 1];
+    CallFrame* current_frame = &frames_[frame_count_ - 1];
+    CallFrame frame = *current_frame;
+
+    // switches CallFrame and updates current frame
+    auto switch_frame = [&]( ) {
+        *current_frame = frame;
+        current_frame = &frames_[frame_count_ - 1];
+        frame = *current_frame;
+    };
+    // updates current frame
+    auto update_frame = [&]( ) {
+        *current_frame = frame;
+    };
+
     for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
         std::cout << "STACK:" << std ::endl;
@@ -61,7 +72,8 @@ InterpretResult VirtualMachine::run( ) {
         std::cout << "**********NEXT INSTRUCTION***************" << std ::endl;
         disassemble_instruction(
             frame->function->chunk,
-            static_cast<int>(frame->ip - frame->function->chunk.opcodes.head( )));
+            static_cast<int>(frame->ip -
+                             frame->function->chunk.opcodes.head( )));
 #endif
         switch (READ_BYTE( )) {
         case OP_CONSTANT: {
@@ -70,9 +82,9 @@ InterpretResult VirtualMachine::run( ) {
             break;
         }
         case OP_CONSTANT_LONG: {
-            uint32_t const_idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
-            Value constant = frame->function->chunk.constants[const_idx];
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            Value constant = frame.function->chunk.constants[const_idx];
             stack_.push(constant);
             break;
         }
@@ -127,6 +139,7 @@ InterpretResult VirtualMachine::run( ) {
 
         case OP_NEGATE: {
             if (!stack_.peek(0).is_number( )) {
+                update_frame( );
                 runtime_error("Operand must be a number.");
                 return INTERPRET_RUNTIME_ERROR;
             }
@@ -144,24 +157,24 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_GET_LOCAL: {
             uint8_t idx = READ_BYTE( );
-            stack_.push(frame->slots[idx]);
+            stack_.push(frame.slots[idx]);
             break;
         }
         case OP_GET_LOCAL_LONG: {
-            uint32_t idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
-            stack_.push(frame->slots[idx]);
+            uint32_t idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            stack_.push(frame.slots[idx]);
             break;
         }
         case OP_SET_LOCAL: {
             uint8_t idx = READ_BYTE( );
-            frame->slots[idx] = stack_.peek(0);
+            frame.slots[idx] = stack_.peek(0);
             break;
         }
         case OP_SET_LOCAL_LONG: {
-            uint32_t idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
-            frame->slots[idx] = stack_.peek(0);
+            uint32_t idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            frame.slots[idx] = stack_.peek(0);
             break;
         }
         case OP_DEFINE_GLOBAL: {
@@ -171,10 +184,10 @@ InterpretResult VirtualMachine::run( ) {
             break;
         }
         case OP_DEFINE_GLOBAL_LONG: {
-            uint32_t const_idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
             StringObject* name =
-                frame->function->chunk.constants[const_idx].string( );
+                frame.function->chunk.constants[const_idx].string( );
             global_table_.insert(name, stack_.peek(0));
             stack_.pop( );    // late pop GC related
             break;
@@ -183,6 +196,7 @@ InterpretResult VirtualMachine::run( ) {
             StringObject* name = READ_CONSTANT( ).string( );
             entry_type& entry = global_table_.find(name);
             if (entry.type( ) != EntryType::USED) {    // contains
+                update_frame( );
                 runtime_error("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
@@ -190,12 +204,13 @@ InterpretResult VirtualMachine::run( ) {
             break;
         }
         case OP_GET_GLOBAL_LONG: {
-            uint32_t const_idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
             StringObject* name =
-                frame->function->chunk.constants[const_idx].string( );
+                frame.function->chunk.constants[const_idx].string( );
             entry_type& entry = global_table_.find(name);
             if (entry.type( ) != EntryType::USED) {
+                update_frame( );
                 runtime_error("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
@@ -206,6 +221,7 @@ InterpretResult VirtualMachine::run( ) {
             StringObject* name = READ_CONSTANT( ).string( );
             entry_type& entry = global_table_.find(name);
             if (entry.type( ) != EntryType::USED) {
+                update_frame( );
                 runtime_error("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
@@ -213,12 +229,13 @@ InterpretResult VirtualMachine::run( ) {
             break;
         }
         case OP_SET_GLOBAL_LONG: {
-            uint32_t const_idx = constant_long_idx(frame->ip);
-            frame->ip += 3;
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
             StringObject* name =
-                frame->function->chunk.constants[const_idx].string( );
+                frame.function->chunk.constants[const_idx].string( );
             entry_type& entry = global_table_.find(name);
             if (entry.type( ) != EntryType::USED) {
+                update_frame( );
                 runtime_error("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
@@ -233,6 +250,7 @@ InterpretResult VirtualMachine::run( ) {
             } else if (v1.is_string( ) && v2.is_string( )) {
                 stack_.push(Value{concatenate(v1.string( ), v2.string( ))});
             } else {
+                update_frame( );
                 runtime_error("Operands must be two numbers or two strings.");
                 return INTERPRET_RUNTIME_ERROR;
             }
@@ -250,8 +268,6 @@ InterpretResult VirtualMachine::run( ) {
             Value v2 = stack_.pop( );
             Value v1 = stack_.pop( );
             stack_.push(binary_multiply<Value>(v1, v2));
-            // stack_.push(binary_multframe->iply<Value>(stack_.pop(),
-            // stack_.pop()));
             break;
         }
         case OP_DIVIDE: {
@@ -271,37 +287,41 @@ InterpretResult VirtualMachine::run( ) {
             break;
         }
         case OP_JUMP: {
-            uint16_t offset = twobyte_idx(frame->ip);
-            frame->ip += 2;
-            frame->ip += offset;
+            uint16_t offset = twobyte_idx(frame.ip);
+            frame.ip += 2;
+            frame.ip += offset;
             break;
         }
         case OP_JUMP_IF_FALSE: {
-            uint16_t offset = twobyte_idx(frame->ip);
-            frame->ip += 2;
+            uint16_t offset = twobyte_idx(frame.ip);
+            frame.ip += 2;
             if (is_falsy(stack_.peek(0)))
-                frame->ip += offset;
+                frame.ip += offset;
             break;
         }
         case OP_JUMP_IF_TRUE: {
-            uint16_t offset = twobyte_idx(frame->ip);
-            frame->ip += 2;
+            uint16_t offset = twobyte_idx(frame.ip);
+            frame.ip += 2;
             if (!is_falsy(stack_.peek(0)))
-                frame->ip += offset;
+                frame.ip += offset;
             break;
         }
         case OP_LOOP: {
-            uint16_t offset = twobyte_idx(frame->ip);
-            frame->ip += 2;
-            frame->ip -= offset;
+            uint16_t offset = twobyte_idx(frame.ip);
+            frame.ip += 2;
+            frame.ip -= offset;
             break;
         }
         case OP_CALL: {
             uint arg_count = READ_BYTE( );
+            update_frame( );
             if (!call_value(stack_.peek(arg_count), arg_count)) {
                 return INTERPRET_RUNTIME_ERROR;
             }
-            frame = &frames_[frame_count_ - 1];
+            // *current_frame = frame;
+            // current_frame = &frames_[frame_count_ - 1];
+            // frame = *current_frame;
+            switch_frame( );
             break;
         }
         case OP_RETURN: {
@@ -311,9 +331,13 @@ InterpretResult VirtualMachine::run( ) {
                 stack_.pop( );
                 return INTERPRET_SUCCESS;
             }
-            stack_.set_top(frame->slots);
+            stack_.set_top(frame.slots);
             stack_.push(result);
-            frame = &frames_[frame_count_ - 1];
+
+            // *current_frame = frame;
+            // current_frame = &frames_[frame_count_ - 1];
+            // frame = *current_frame;
+            switch_frame( );
             break;
         }
         }
@@ -322,11 +346,11 @@ InterpretResult VirtualMachine::run( ) {
 
 bool VirtualMachine::call_value(Value callee, uint arg_count) {
     // Don't want 2 slow down with extra if check
-    if (!callee.is_object()) {
-         runtime_error("Can only call functions and classes.");
-         return false;
+    if (!callee.is_object( )) {
+        runtime_error("Can only call functions and classes.");
+        return false;
     }
-    switch (callee.object_type()) {
+    switch (callee.object_type( )) {
     case OBJ_FUNCTION:
         return call(callee.function( ), arg_count);
     case OBJ_NATIVE: {
@@ -370,9 +394,9 @@ void VirtualMachine::runtime_error(const char* fmt, ...) {
 
 
     for (int i = frame_count_ - 1; i >= 0; i--) {
-        CallFrame& frame = frames_[i];
-        FunctionObject* function = frame.function;
-        size_t offset = frame.ip - function->chunk.opcodes.head( );
+        CallFrame& call_frame = frames_[i];
+        FunctionObject* function = call_frame.function;
+        size_t offset = call_frame.ip - function->chunk.opcodes.head( );
         uint line = line_number(function->chunk, offset);
         std::cerr << "[line " << line << "] in ";
         if (function->name == nullptr) {
@@ -387,12 +411,9 @@ void VirtualMachine::define_native_function(const char* name,
                                             NativeFunction native_function) {
     stack_.push(Value(str_from_chars(name, static_cast<uint>(strlen(name)))));
     stack_.push(Value(new NativeObject(native_function)));
-    // DEBUG
-    Value native_fn = stack_.peek(0);
-    // END OF DEBUG
-    global_table_.insert(stack_.peek(1).string(), stack_.peek(0));
-    stack_.pop();
-    stack_.pop();
+    global_table_.insert(stack_.peek(1).string( ), stack_.peek(0));
+    stack_.pop( );
+    stack_.pop( );
 }
 
 
