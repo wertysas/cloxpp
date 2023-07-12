@@ -23,7 +23,7 @@ enum InterpretResult {
 
 // CallFrame class holds all info required to handle a function call
 struct CallFrame {
-    FunctionObject* function; // function executing
+    ClosureObject* closure; // function executing
     OpCode* ip;
     Value* slots; // pointer to 1st slot in the stack the function can use
 };
@@ -53,7 +53,8 @@ class VirtualMachine {
     void runtime_error(const char* fmt...);
     inline CallFrame& current_frame() { return frames_[frame_count_-1]; }
     bool call_value(Value callee, uint arg_count);
-    bool call(FunctionObject* function, uint arg_count);
+    // bool call(FunctionObject* function, uint arg_count);
+    bool call(ClosureObject* closure, uint arg_count);
     void define_native_function(const char* name, NativeFunction native_function);
 };
 

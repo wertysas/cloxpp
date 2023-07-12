@@ -14,7 +14,8 @@ StringObject* str_from_chars(const char *chars, uint length) {
 }
 
 StringObject* allocate_string(char *chars, uint length, HashType hash) {
-    auto* string = allocate_object<StringObject>(OBJ_STRING);
+    auto* string = allocate_object<StringObject>();
+    string->type = OBJ_STRING;
     string->length = length;
     string->chars = chars;
     string->hash = hash;
@@ -46,15 +47,21 @@ HashType hash_string(const char *str, uint length) {
 }
 
 void* FunctionObject::operator new(size_t) {
-    return allocate_object<FunctionObject>(OBJ_FUNCTION);
+    return allocate_object<FunctionObject>();
 }
 
-void FunctionObject::operator delete(void* p, size_t size) {
+void FunctionObject::operator delete(void* p) {
     memory::free<FunctionObject>(p);
 }
 void* NativeObject::operator new(size_t) {
-    return allocate_object<NativeObject>(OBJ_NATIVE);
+    return allocate_object<NativeObject>();
 }
-void NativeObject::operator delete(void* p, size_t size) {
+void NativeObject::operator delete(void* p) {
     memory::free<NativeObject>(p);
+}
+void* ClosureObject::operator new(size_t) {
+    return allocate_object<ClosureObject>();
+}
+void ClosureObject::operator delete(void* p) {
+    return memory::free<ClosureObject>(p);
 }

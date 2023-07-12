@@ -46,25 +46,36 @@ struct FunctionObject : public Object {
     uint arity;
     Chunk chunk;
     StringObject* name;
-    FunctionObject() : arity(0), chunk(), name(nullptr) {}
+    FunctionObject() : arity(0), chunk(), name(nullptr) {
+        type = OBJ_FUNCTION;
+    }
     void*  operator new(size_t);
-    void operator delete(void* p, size_t size);
+    void operator delete(void* p);
+};
+
+struct ClosureObject : public Object {
+    FunctionObject* function;
+    explicit ClosureObject(FunctionObject* fn) : function(fn) {
+        type = OBJ_CLOSURE;
+    }
+    void* operator new(size_t);
+    void operator delete(void* p);
 };
 
 typedef Value (*NativeFunction)(uint arg_count, Value* args);
-
 struct NativeObject : public Object {
     NativeFunction function;
-    NativeObject(NativeFunction fn) : function(fn) {}
+    explicit NativeObject(NativeFunction fn) : function(fn) {
+        type = OBJ_NATIVE;
+    }
     void* operator  new(size_t);
-    void operator delete(void* p, size_t size);
+    void operator delete(void* p);
 };
 
 template<typename T>
-T* allocate_object(ObjectType object_type) {
+T* allocate_object() {
     size_t size = sizeof(T);
     Object* object = reinterpret_cast<Object*>(reallocate(nullptr, 0, size));
-    object->type = object_type;
 
     // Updating object list used to keep track of objects allocated
     object->next = memory::objects;

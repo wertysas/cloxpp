@@ -100,6 +100,12 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_CALL: {
         return byte_instruction("OP_CALL", chunk, offset);
     }
+    case OP_CLOSURE: {
+        return constant_instruction("OP_CLOSURE", chunk, offset);
+    }
+    case OP_CLOSURE_LONG: {
+        return constant_instruction_long("OP_CLOSURE_LONG", chunk, offset);
+    }
     case OP_RETURN:
         return simple_instruction("OP_RETURN", offset);
     default:

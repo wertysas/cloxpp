@@ -101,6 +101,7 @@ class Parser {
 
     void emit_byte(OpCode opcode);
     void emit_byte(uint token_idx, OpCode opcode);
+    uint emit_constant(Value value);
     void emit_byte_with_index(OpCode op_short, OpCode op_long, uint idx);
     uint emit_jump(OpCode opcode);
     void patch_jump(uint offset);

@@ -244,6 +244,11 @@ inline void Parser::emit_byte(OpCode opcode) {
     chunk( ).add_opcode(opcode, tokens_[current_ - 1].line);
 }
 
+uint Parser::emit_constant(Value value) {
+    chunk().constants.append(value);
+    return chunk().constants.count()-1;
+}
+
 inline void Parser::emit_byte(uint idx, OpCode opcode) {
     chunk( ).add_opcode(opcode, tokens_[idx].line);
 }
@@ -312,7 +317,9 @@ void Parser::function(FunctionType fun_type) {
     block( );
 
     FunctionObject* function = close_function_scope( );
-    chunk( ).add_constant(Value(function), previous( ).line);
+    // TODO: DANGER ZONE
+    uint idx = emit_constant(Value(function));
+    emit_byte_with_index(OP_CLOSURE, OP_CLOSURE_LONG, idx);
 }
 
 uint8_t Parser::argument_list( ) {
