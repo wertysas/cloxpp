@@ -245,8 +245,8 @@ inline void Parser::emit_byte(OpCode opcode) {
 }
 
 uint Parser::emit_constant(Value value) {
-    chunk().constants.append(value);
-    return chunk().constants.count()-1;
+    chunk( ).constants.append(value);
+    return chunk( ).constants.count( ) - 1;
 }
 
 inline void Parser::emit_byte(uint idx, OpCode opcode) {
@@ -289,11 +289,11 @@ void Parser::declaration( ) {
 void Parser::function_declaration( ) {
     uint8_t global = parse_variable("Expect function name.");
     scope_->mark_initialized( );
-    function(FunctionType::FUNCTION);
+    function( );
     define_variable(global);
 }
 
-void Parser::function(FunctionType fun_type) {
+void Parser::function( ) {
     StringObject* name = str_from_chars(previous( ).start, previous( ).length);
     FunctionScope function_scope(scope_, name);
     update_scope(&function_scope);
@@ -317,9 +317,20 @@ void Parser::function(FunctionType fun_type) {
     block( );
 
     FunctionObject* function = close_function_scope( );
-    // TODO: DANGER ZONE
     uint idx = emit_constant(Value(function));
     emit_byte_with_index(OP_CLOSURE, OP_CLOSURE_LONG, idx);
+
+    std::cout << "scope address: " << scope_  << std::endl;
+    std::cout << "function address: " << function << std::endl;
+    std::cout << "upvalues: (count: " << function->upvalue_count << ")" << std::endl;
+
+    for (uint i = 0; i < function->upvalue_count; i++) {
+        UpValue& upvalue = scope_->upvalues[i];
+        std::cout << "idx: " << upvalue.idx << " is_local: " << upvalue.is_local << std::endl;
+        emit_byte(upvalue.is_local ? static_cast<OpCode>(1)
+                                   : static_cast<OpCode>(0));
+        emit_byte(static_cast<OpCode>(upvalue.idx));
+    }
 }
 
 uint8_t Parser::argument_list( ) {
@@ -395,10 +406,9 @@ void Parser::return_statement( ) {
         error("Can't return from top-level code.");
     }
     if (match(TOKEN_SEMICOLON)) {
-        emit_return();
-    }
-    else {
-        expression();
+        emit_return( );
+    } else {
+        expression( );
         consume(TOKEN_SEMICOLON, "Expect ';' after return value;");
         emit_byte(OP_RETURN);
     }
@@ -591,7 +601,7 @@ void Parser::end_scope( ) {
 }
 
 FunctionObject* Parser::close_function_scope( ) {
-    emit_return();
+    emit_return( );
     FunctionObject* function_ptr = scope_->function;
 #ifdef DEBUG_PRINT_CODE
     if (!had_error( )) {
@@ -606,28 +616,38 @@ FunctionObject* Parser::close_function_scope( ) {
 }
 
 void Parser::named_variable(const Token& token, bool assignable) {
-    uint idx = resolve_local(token);
+    uint idx = resolve_local(*scope_, token);
+    OpCode set_op, set_op_long, get_op, get_op_long;
     if (idx != UINT_MAX) {
-        if (assignable && match(TOKEN_EQUAL)) {
-            expression( );
-            emit_byte_with_index(OP_SET_LOCAL, OP_SET_LOCAL_LONG, idx);
-        } else {
-            emit_byte_with_index(OP_GET_LOCAL, OP_GET_LOCAL_LONG, idx);
-        }
+        // TODO: These can all be set by 1 operation check if the compiler
+        // implements that optimization!
+        set_op = OP_SET_LOCAL;
+        set_op_long = OP_SET_LOCAL_LONG;
+        get_op = OP_GET_LOCAL;
+        get_op_long = OP_GET_LOCAL_LONG;
+    } else if ((idx = resolve_upvalue(*scope_, token)) != UINT_MAX) {
+        set_op = OP_SET_UPVALUE;
+        set_op_long = OP_SET_UPVALUE_LONG;
+        get_op = OP_GET_UPVALUE;
+        get_op_long = OP_GET_UPVALUE_LONG;
     } else {
         idx = identifier_constant(token);
-        if (assignable && match(TOKEN_EQUAL)) {
-            expression( );
-            emit_byte_with_index(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, idx);
-        } else {
-            emit_byte_with_index(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, idx);
-        }
+        set_op = OP_SET_GLOBAL;
+        set_op_long = OP_SET_GLOBAL_LONG;
+        get_op = OP_GET_GLOBAL;
+        get_op_long = OP_GET_GLOBAL_LONG;
+    }
+    if (assignable && match(TOKEN_EQUAL)) {
+        expression( );
+        emit_byte_with_index(set_op, set_op_long, idx);
+    } else {
+        emit_byte_with_index(get_op, get_op_long, idx);
     }
 }
 
-uint Parser::resolve_local(const Token& token) {
-    for (uint i = scope_->local_count; i > 0; i--) {
-        LocalVariable& local = (*scope_)[i - 1];
+uint Parser::resolve_local(FunctionScope& scope, const Token& token) {
+    for (uint i = scope.local_count; i > 0; i--) {
+        LocalVariable& local = scope[i - 1];
         if (lexemes_equal(token, local.token)) {
             if (local.depth == -1) {
                 error("Can't read local variable in its own initializer.");
@@ -637,6 +657,48 @@ uint Parser::resolve_local(const Token& token) {
     }
     return UINT_MAX;
 }
+
+uint Parser::resolve_upvalue(FunctionScope& scope, const Token& token) {
+    if (scope.enclosing == nullptr)
+        return UINT_MAX;
+
+    uint local = resolve_local(*scope.enclosing, token);
+    if (local != UINT_MAX) {
+        return add_upvalue(scope, local, true);
+    }
+
+    uint upvalue = resolve_upvalue(*scope.enclosing, token);
+    if (upvalue != UINT_MAX) {
+        return add_upvalue(scope, upvalue, false);
+    }
+
+    return UINT_MAX;
+}
+
+uint Parser::add_upvalue(FunctionScope& scope, uint idx, bool is_local) {
+    uint16_t upvalue_count = scope.function->upvalue_count;
+
+    for (uint i = 0; i < upvalue_count; i++) {
+        UpValue& upvalue = scope.upvalues[i];
+        if (upvalue.idx == idx && upvalue.is_local == is_local) {
+            return i;
+        }
+    }
+
+    if (upvalue_count == UINT8_MAX+1) {
+        error("Too many closure variables in function.");
+        return 0;
+    }
+
+    std::cout << "scope address: " << &scope  << std::endl;
+    std::cout << "scope.function address: " << scope.function << std::endl;
+    std::cout << "upvalues: (count: " << upvalue_count << ")" << std::endl;
+    std::cout << "idx: " << idx << " is_local: " << is_local << std::endl;
+    scope.upvalues[upvalue_count].is_local = is_local;
+    scope.upvalues[upvalue_count].idx = idx;
+    return scope.function->upvalue_count++;
+}
+
 void Parser::and_(bool assignable) {
     uint end_jump = emit_jump(OP_JUMP_IF_FALSE);
     // Left value of and_ expression is already on stack and must be popped

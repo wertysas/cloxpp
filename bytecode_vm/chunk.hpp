@@ -21,10 +21,15 @@ enum OpCode : uint8_t {
     OP_GET_LOCAL_LONG,
     OP_DEFINE_GLOBAL,
     OP_DEFINE_GLOBAL_LONG,
-    OP_GET_GLOBAL,
-    OP_GET_GLOBAL_LONG,
     OP_SET_GLOBAL,
     OP_SET_GLOBAL_LONG,
+    OP_GET_GLOBAL,
+    OP_GET_GLOBAL_LONG,
+    OP_SET_UPVALUE,
+    OP_SET_UPVALUE_LONG,
+    OP_GET_UPVALUE,
+    OP_GET_UPVALUE_LONG,
+
     // Null, Boolean and Comparisons
     OP_NIL,
     OP_TRUE,

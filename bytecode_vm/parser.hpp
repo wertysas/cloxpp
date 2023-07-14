@@ -76,7 +76,7 @@ class Parser {
     void parse_precedence(Precedence precedence);
     void declaration( );
     void function_declaration( );
-    void function(FunctionType fun_type);
+    void function();
     uint8_t argument_list();
     void var_declaration( );
     void statement( );
@@ -95,11 +95,13 @@ class Parser {
     void define_variable(uint global);
     void declare_variable( );
     void named_variable(const Token& token, bool assignable);
-    uint resolve_local(const Token& token);
+    uint resolve_local(FunctionScope& scope, const Token& token);
+    uint resolve_upvalue(FunctionScope& scope, const Token& token);
+    uint add_upvalue(FunctionScope& scope, uint idx, bool is_local);
     uint identifier_constant(Token const& token);
     ParseRule* parse_rule(TokenType type);
 
-    void emit_byte(OpCode opcode);
+    void emit_byte(OpCode opcode); // adds OpCode to chunk of function in scope
     void emit_byte(uint token_idx, OpCode opcode);
     uint emit_constant(Value value);
     void emit_byte_with_index(OpCode op_short, OpCode op_long, uint idx);

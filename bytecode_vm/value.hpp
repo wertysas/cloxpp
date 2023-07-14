@@ -14,7 +14,13 @@ struct FunctionObject;
 struct NativeObject;
 struct ClosureObject;
 
-enum ObjectType : uint8_t { OBJ_CLOSURE, OBJ_FUNCTION, OBJ_NATIVE, OBJ_STRING };
+enum ObjectType : uint8_t {
+    OBJ_CLOSURE,
+    OBJ_UPVALUE,
+    OBJ_FUNCTION,
+    OBJ_NATIVE,
+    OBJ_STRING
+};
 
 enum ValueType { VAL_BOOL, VAL_NIL, VAL_NUMBER, VAL_OBJ };
 

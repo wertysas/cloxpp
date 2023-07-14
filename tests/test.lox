@@ -1,16 +1,11 @@
-fun fib(n) {
-  if (n < 2) return n;
-  return fib(n - 2) + fib(n - 1);
+fun outer() {
+  var a = 1;
+  var b = 2;
+  fun middle() {
+    var c = 3;
+    var d = 4;
+    fun inner() {
+      print a + c + b + d;
+    }
+  }
 }
-
-
-var start = clock();
-var sum = 0;
-for (var i = 0; i<10; i=i+1) {
-start = clock();
-print fib(30);
-sum = sum + clock()-start;
-}
-
-print("Average over 10 iterations: ");
-print(sum/10);

@@ -17,7 +17,13 @@ struct LocalVariable {
     Token token;
 };
 
+struct UpValue {
+    uint8_t idx;
+    bool is_local;
+};
+
 enum class FunctionType { FUNCTION, SCRIPT };
+
 struct FunctionScope {
     uint16_t local_count;
     uint16_t scope_depth;
@@ -25,6 +31,7 @@ struct FunctionScope {
     FunctionObject* function;
     FunctionType type;
     StaticArray<LocalVariable, UINT8_MAX + 1> locals;
+    StaticArray<UpValue, UINT8_MAX + 1> upvalues;
 
     FunctionScope( )
         : local_count(0), scope_depth(0), enclosing(nullptr),
@@ -50,7 +57,7 @@ struct FunctionScope {
     }
     constexpr LocalVariable& last( ) { return operator[](local_count - 1); }
     bool add_local(Token name) {
-        if (local_count == UINT8_MAX+1) {
+        if (local_count == UINT8_MAX + 1) {
             return false;
         }
         LocalVariable& local = locals[local_count++];
@@ -58,6 +65,7 @@ struct FunctionScope {
         local.depth = -1;
         return true;
     }
+
     void mark_initialized( ) {
         if (scope_depth == 0)
             return;
