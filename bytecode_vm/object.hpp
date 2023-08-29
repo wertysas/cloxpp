@@ -47,9 +47,11 @@ struct FunctionObject : public Object {
     uint16_t upvalue_count;
     Chunk chunk;
     StringObject* name;
+
     FunctionObject( ) : arity(0), upvalue_count(0), chunk( ), name(nullptr) {
         type = OBJ_FUNCTION;
     }
+
     void* operator new(size_t);
     void operator delete(void* p);
 };
@@ -57,9 +59,13 @@ struct FunctionObject : public Object {
 struct UpValueObject : public Object {
     Value* location;
     Value closed;
-    explicit UpValueObject(Value* loc) : location(loc), closed( ) {
+    UpValueObject* next_upvalue;
+
+    explicit UpValueObject(Value* loc)
+        : location(loc), closed( ), next_upvalue(nullptr) {
         type = OBJ_UPVALUE;
     }
+
     void* operator new(size_t);
     void operator delete(void* p);
 };

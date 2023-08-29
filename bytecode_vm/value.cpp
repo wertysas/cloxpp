@@ -6,6 +6,11 @@
 #include "value.hpp"
 #include "object.hpp"
 
+
+////////////////////////////////////////////////////////////////////////////////
+// Arithmetic Operators
+////////////////////////////////////////////////////////////////////////////////
+
 Value operator+(const Value& v1, const Value& v2) {
     return Value(v1.number_value( ) + v2.number_value( ));
 }
@@ -47,8 +52,8 @@ bool operator!=(const Value& v1, const Value& v2) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Operator for numeric types where check for value_type.numeric() has been
-// made in VM runtime
+// Comparison operators for numeric types where check for value_type.numeric()
+// type checks are done in VM runtime
 ////////////////////////////////////////////////////////////////////////////////
 bool operator<(const Value& v1, const Value& v2) {
     return v1.number_value( ) < v2.number_value( );

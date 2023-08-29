@@ -593,11 +593,22 @@ void Parser::end_scope( ) {
     uint n = 0;
     while (scope_->local_count > 0 &&
            scope_->last( ).depth > scope_->scope_depth) {
-        ++n;
+        if (scope_->locals[scope_->local_count-1].captured) {
+            if (n>0) {
+                emit_byte(OP_POPN);
+                emit_byte(static_cast<OpCode>(n));
+            }
+            n=0;
+            emit_byte(OP_CLOSE_UPVALUE);
+        } else {
+            ++n;
+        }
         --scope_->local_count;
     }
-    emit_byte(OP_POPN);
-    emit_byte(static_cast<OpCode>(n));
+    if (n>0) {
+        emit_byte(OP_POPN);
+        emit_byte(static_cast<OpCode>(n));
+    }
 }
 
 FunctionObject* Parser::close_function_scope( ) {

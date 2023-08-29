@@ -138,6 +138,9 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_CLOSURE_LONG: {    // FIXME: Implement this
         return constant_instruction_long("OP_CLOSURE_LONG", chunk, offset);
     }
+    case OP_CLOSE_UPVALUE: {
+        return simple_instruction("OP_CLOSE_UPVALUE", offset);
+    }
     case OP_RETURN:
         return simple_instruction("OP_RETURN", offset);
     default:

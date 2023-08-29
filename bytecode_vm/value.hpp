@@ -50,6 +50,12 @@ class Value {
     Value(NativeObject* native_obj);
     Value(ClosureObject* closure_object);
 
+    // Copy CTOR and assignment operator, these are essentially std::memmoves
+    // for more info see:
+    // https://en.cppreference.com/w/cpp/language/copy_constructor
+    Value(const Value& value) = default;
+    Value& operator=(const Value& value) = default;
+
     // ValueType accessors
     inline bool bool_value( ) const { return value_.boolean; }
     inline double number_value( ) const { return value_.number; }

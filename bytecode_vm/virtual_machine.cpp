@@ -383,8 +383,14 @@ InterpretResult VirtualMachine::run( ) {
             *frame.closure->upvalues[upvalue_idx]->location = stack_.peek(0);
             break;
         }
+        case OP_CLOSE_UPVALUE: {
+            close_upvalues(stack_.top( ) - 1);
+            stack_.pop();
+            break;
+        }
         case OP_RETURN: {
             Value result = stack_.pop( );
+            close_upvalues(frame.slots);
             frame_count_--;
             if (frame_count_ == 0) {
                 stack_.pop( );
@@ -393,9 +399,6 @@ InterpretResult VirtualMachine::run( ) {
             stack_.set_top(frame.slots);
             stack_.push(result);
 
-            // *current_frame = frame;
-            // current_frame = &frames_[frame_count_ - 1];
-            // frame = *current_frame;
             switch_frame( );
             break;
         }
@@ -413,8 +416,6 @@ bool VirtualMachine::call_value(Value callee, uint arg_count) {
     case OBJ_CLOSURE: {
         return call(callee.closure( ), arg_count);
     }
-    // case OBJ_FUNCTION:
-    //     return call(callee.function( ), arg_count);
     case OBJ_NATIVE: {
         NativeFunction native_function = callee.native_function( );
         Value result = native_function(arg_count, stack_.top( ) - arg_count);
@@ -429,27 +430,36 @@ bool VirtualMachine::call_value(Value callee, uint arg_count) {
 }
 
 UpValueObject* VirtualMachine::capture_upvalue(Value* local_value) {
-    return new UpValueObject(local_value);
+    UpValueObject *prev= nullptr, *new_upvalue, *upvalue=open_upvalues_;
+    while (upvalue != nullptr && upvalue->location > local_value) {
+        prev = upvalue;
+        upvalue = prev->next_upvalue;
+    }
+
+    if (upvalue != nullptr && upvalue->location == local_value) {
+        return upvalue;
+    }
+
+    new_upvalue = new UpValueObject(local_value);
+    new_upvalue->next_upvalue = upvalue;
+
+    if (prev == nullptr) {
+        open_upvalues_ = new_upvalue;
+    } else {
+        prev->next_upvalue = new_upvalue;
+    }
+
+    return new_upvalue;
 }
 
-// bool VirtualMachine::call(FunctionObject* function, uint arg_count) {
-//     if (arg_count != function->arity) {
-//         runtime_error(
-//             "Expected %d arguments but got %d.", function->arity, arg_count);
-//         return false;
-//     }
-//
-//     if (frame_count_ == FRAMES_MAX) {
-//         runtime_error("Stack overflow.");
-//         return false;
-//     }
-//
-//     CallFrame* frame = &frames_[frame_count_++];
-//     frame->function = function;
-//     frame->ip = function->chunk.opcodes.head( );
-//     frame->slots = stack_.top( ) - arg_count - 1;
-//     return true;
-// }
+void VirtualMachine::close_upvalues(Value* last) {
+    while (open_upvalues_ != nullptr && open_upvalues_->location >= last) {
+        UpValueObject* upvalue = open_upvalues_;
+        upvalue->closed = *upvalue->location;
+        upvalue->location = &upvalue->closed;
+        open_upvalues_ = upvalue->next_upvalue;
+    }
+}
 
 bool VirtualMachine::call(ClosureObject* closure, uint arg_count) {
     if (arg_count != closure->function->arity) {

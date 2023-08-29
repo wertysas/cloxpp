@@ -50,13 +50,18 @@ class VirtualMachine {
     table_type global_table_;
     CallFrame frames_[FRAMES_MAX];
     uint frame_count_ = 0;
-    void runtime_error(const char* fmt...);
+    UpValueObject* open_upvalues_ = nullptr;
+
     inline CallFrame& current_frame() { return frames_[frame_count_-1]; }
-    bool call_value(Value callee, uint arg_count);
+
     UpValueObject* capture_upvalue(Value* local_value);
-    // bool call(FunctionObject* function, uint arg_count);
+    void close_upvalues(Value* last);
+
+    bool call_value(Value callee, uint arg_count);
     bool call(ClosureObject* closure, uint arg_count);
     void define_native_function(const char* name, NativeFunction native_function);
+
+    void runtime_error(const char* fmt...);
 };
 
 
