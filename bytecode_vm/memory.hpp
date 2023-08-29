@@ -12,7 +12,14 @@
 #define INIT_CAPACITY 8
 #define GROWTH_CONSTANT 2
 
+
 void* reallocate(void* ptr, size_t old_size, size_t new_size);
+
+struct Object;
+void free_objects();
+void free_object(Object *object);
+
+namespace memory {
 
 template<typename T>
 T* allocate(uint count) {
@@ -20,11 +27,7 @@ T* allocate(uint count) {
 }
 
 
-struct Object;
-void free_objects();
-void free_object(Object *object);
 
-namespace memory {
 
 extern Object* objects;
 

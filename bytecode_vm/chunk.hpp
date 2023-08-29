@@ -10,6 +10,11 @@
 #include "dynamic_array.hpp"
 
 
+// If one runs out of instructions, an idea could be to encode long instructions
+// by an extra opcode LONG, and if the VM reaches a "LONG" instruction it knows
+// it has to interpret the next opcode + xx bytes differently. This way the
+// slower path only has to be taken if reaching the "LONG" instruction
+
 enum OpCode : uint8_t {
     // Constants
     OP_CONSTANT,

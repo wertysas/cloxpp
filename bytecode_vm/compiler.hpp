@@ -14,6 +14,7 @@
 
 struct LocalVariable {
     short depth = -1;
+    bool captured = false;
     Token token;
 };
 
@@ -39,9 +40,11 @@ struct FunctionScope {
         function = new FunctionObject;
         LocalVariable& local = locals[local_count++];
         local.depth = 0;
+        local.captured = false;
         local.token.start = "";
         local.token.length = 0;
     }
+
     FunctionScope(FunctionScope* enclosing_, StringObject* name)
         : local_count(0), scope_depth(0), enclosing(enclosing_),
           type(FunctionType::FUNCTION), locals{ } {
@@ -49,13 +52,17 @@ struct FunctionScope {
         function->name = name;
         LocalVariable& local = locals[local_count++];
         local.depth = 0;
+        local.captured = false;
         local.token.start = "";
         local.token.length = 0;
     }
+
     constexpr LocalVariable& operator[](size_t index) {
         return locals.begin( )[index];
     }
+
     constexpr LocalVariable& last( ) { return operator[](local_count - 1); }
+
     bool add_local(Token name) {
         if (local_count == UINT8_MAX + 1) {
             return false;
@@ -63,6 +70,7 @@ struct FunctionScope {
         LocalVariable& local = locals[local_count++];
         local.token = name;
         local.depth = -1;
+        local.captured = false;
         return true;
     }
 

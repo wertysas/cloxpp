@@ -120,7 +120,7 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
 
         FunctionObject* function = val.function( );
         for (uint i = 0; i < function->upvalue_count; i++) {
-            bool is_local = chunk.opcodes[offset++];
+            uint8_t is_local = chunk.opcodes[offset++];
             uint index = chunk.opcodes[offset++];
             std::cout << std::right << std::setw(5) << offset << "\t";
             std::cout << std::setw(5) << line << "\t";

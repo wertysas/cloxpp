@@ -100,6 +100,8 @@ void print_object(Value value) {
     case OBJ_CLOSURE:
         print_function(value.closure()->function);
         break;
+    case OBJ_UPVALUE:
+        std::cout << "upvalue";
     }
 }
 

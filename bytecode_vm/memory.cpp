@@ -64,5 +64,8 @@ void free_object(Object* object) {
         delete static_cast<ClosureObject*>(object);
         break;
     }
+    case OBJ_UPVALUE: {
+        delete static_cast<UpValueObject*>(object);
+    }
     }
 }

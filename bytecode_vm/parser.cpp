@@ -320,13 +320,13 @@ void Parser::function( ) {
     uint idx = emit_constant(Value(function));
     emit_byte_with_index(OP_CLOSURE, OP_CLOSURE_LONG, idx);
 
-    std::cout << "scope address: " << scope_  << std::endl;
-    std::cout << "function address: " << function << std::endl;
-    std::cout << "upvalues: (count: " << function->upvalue_count << ")" << std::endl;
+    // std::cout << "scope address: " << scope_  << std::endl;
+    // std::cout << "function address: " << function << std::endl;
+    // std::cout << "upvalues: (count: " << function->upvalue_count << ")" << std::endl;
 
     for (uint i = 0; i < function->upvalue_count; i++) {
-        UpValue& upvalue = scope_->upvalues[i];
-        std::cout << "idx: " << upvalue.idx << " is_local: " << upvalue.is_local << std::endl;
+        UpValue& upvalue = function_scope.upvalues[i];
+        // std::cout << "idx: " << upvalue.idx << " is_local: " << upvalue.is_local << std::endl;
         emit_byte(upvalue.is_local ? static_cast<OpCode>(1)
                                    : static_cast<OpCode>(0));
         emit_byte(static_cast<OpCode>(upvalue.idx));
@@ -646,13 +646,14 @@ void Parser::named_variable(const Token& token, bool assignable) {
 }
 
 uint Parser::resolve_local(FunctionScope& scope, const Token& token) {
-    for (uint i = scope.local_count; i > 0; i--) {
-        LocalVariable& local = scope[i - 1];
+    for (uint i = scope.local_count; i > 0; i--) { // 0-1 = UINT_MAX
+        LocalVariable& local = scope[i-1];
         if (lexemes_equal(token, local.token)) {
             if (local.depth == -1) {
                 error("Can't read local variable in its own initializer.");
+                return UINT_MAX;
             }
-            return i - 1;
+            return i-1;
         }
     }
     return UINT_MAX;
@@ -664,6 +665,7 @@ uint Parser::resolve_upvalue(FunctionScope& scope, const Token& token) {
 
     uint local = resolve_local(*scope.enclosing, token);
     if (local != UINT_MAX) {
+        scope_->enclosing->locals[local].captured = true;
         return add_upvalue(scope, local, true);
     }
 
@@ -680,7 +682,7 @@ uint Parser::add_upvalue(FunctionScope& scope, uint idx, bool is_local) {
 
     for (uint i = 0; i < upvalue_count; i++) {
         UpValue& upvalue = scope.upvalues[i];
-        if (upvalue.idx == idx && upvalue.is_local == is_local) {
+        if (upvalue.idx==idx && upvalue.is_local==is_local) {
             return i;
         }
     }
@@ -690,10 +692,6 @@ uint Parser::add_upvalue(FunctionScope& scope, uint idx, bool is_local) {
         return 0;
     }
 
-    std::cout << "scope address: " << &scope  << std::endl;
-    std::cout << "scope.function address: " << scope.function << std::endl;
-    std::cout << "upvalues: (count: " << upvalue_count << ")" << std::endl;
-    std::cout << "idx: " << idx << " is_local: " << is_local << std::endl;
     scope.upvalues[upvalue_count].is_local = is_local;
     scope.upvalues[upvalue_count].idx = idx;
     return scope.function->upvalue_count++;
