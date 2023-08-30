@@ -31,7 +31,7 @@ concept Pointer = std::is_pointer_v<T>;
 enum class EntryType {
     EMPTY,
     USED,
-    TOMBSTONE,    // i.e. a tombstone entry which
+    TOMBSTONE,
 };
 
 template<typename Key, typename T, typename = void>
@@ -165,7 +165,6 @@ bool HashTable<Key, T, Hash, KeyEqual, A>::contains(const Key& key) {
 }
 
 
-// How to handle when key is  a "bad value"
 template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
 TableEntry<Key, T>& HashTable<Key, T, Hash, KeyEqual, A>::find(Key const& key) const {
     size_t idx = Hash{ }(key) % capacity_; // possibly switch 2 fibonacci

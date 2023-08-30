@@ -111,32 +111,13 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_CLOSURE: {
         offset++;
         uint8_t const_idx = chunk.opcodes[offset++];
-        Value val = chunk.constants[const_idx];
-        std::cout << std::setw(16) << std::left << "OP_CLOSURE"
-                  << "\t" << std::right << std::setw(5)
-                  << static_cast<unsigned int>(const_idx) << "\t";
-        print_value(val);
-        std::cout << std::endl;
-
-        FunctionObject* function = val.function( );
-        for (uint i = 0; i < function->upvalue_count; i++) {
-            uint8_t is_local = chunk.opcodes[offset++];
-            uint index = chunk.opcodes[offset++];
-            std::cout << std::right << std::setw(5) << offset << "\t";
-            std::cout << std::setw(5) << line << "\t";
-            std::cout << std::setw(16) << std::left << "|"
-                      << "\t" << std::right << std::setw(5) << ""
-                      << "\t";
-            if (is_local) {
-                std::cout << "local " << index << std::endl;
-            } else {
-                std::cout << "upvalue " << index << std::endl;
-            }
-        }
-        return offset;
+        return closure_instruction("OP_CLOSURE", chunk, offset, const_idx, line);
     }
     case OP_CLOSURE_LONG: {    // FIXME: Implement this
-        return constant_instruction_long("OP_CLOSURE_LONG", chunk, offset);
+        uint8_t* b = reinterpret_cast<uint8_t*>(&chunk.opcodes[offset + 1]);
+        uint32_t const_idx = (b[0] | b[1] << 8 | b[2] << 16);
+        offset += 4;
+        return closure_instruction("OP_CLOSURE_LONG", chunk, offset, const_idx, line);
     }
     case OP_CLOSE_UPVALUE: {
         return simple_instruction("OP_CLOSE_UPVALUE", offset);
@@ -218,4 +199,34 @@ size_t jump_instruction(std::string op_name,
               << static_cast<unsigned int>(offset + 3 + sign * jump)
               << std::endl;
     return offset + 3;
+}
+
+size_t closure_instruction(std::string op_name,
+                           const Chunk& chunk,
+                           size_t offset,
+                           uint const_idx,
+                           uint line) {
+    Value val = chunk.constants[const_idx];
+    std::cout << std::setw(16) << std::left << "OP_CLOSURE"
+              << "\t" << std::right << std::setw(5)
+              << static_cast<unsigned int>(const_idx) << "\t";
+    print_value(val);
+    std::cout << std::endl;
+
+    FunctionObject* function = val.function( );
+    for (uint i = 0; i < function->upvalue_count; i++) {
+        uint8_t is_local = chunk.opcodes[offset++];
+        uint index = chunk.opcodes[offset++];
+        std::cout << std::right << std::setw(5) << offset << "\t";
+        std::cout << std::setw(5) << line << "\t";
+        std::cout << std::setw(16) << std::left << "|"
+                  << "\t" << std::right << std::setw(5) << ""
+                  << "\t";
+        if (is_local) {
+            std::cout << "local " << index << std::endl;
+        } else {
+            std::cout << "upvalue " << index << std::endl;
+        }
+    }
+    return offset;
 }

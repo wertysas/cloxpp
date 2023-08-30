@@ -320,10 +320,6 @@ void Parser::function( ) {
     uint idx = emit_constant(Value(function));
     emit_byte_with_index(OP_CLOSURE, OP_CLOSURE_LONG, idx);
 
-    // std::cout << "scope address: " << scope_  << std::endl;
-    // std::cout << "function address: " << function << std::endl;
-    // std::cout << "upvalues: (count: " << function->upvalue_count << ")" << std::endl;
-
     for (uint i = 0; i < function->upvalue_count; i++) {
         UpValue& upvalue = function_scope.upvalues[i];
         // std::cout << "idx: " << upvalue.idx << " is_local: " << upvalue.is_local << std::endl;
