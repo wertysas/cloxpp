@@ -25,8 +25,12 @@ InterpretResult VirtualMachine::interpret(const string& source) {
         return INTERPRET_COMPILE_ERROR;
     }
 
+    // push and pop for GC
     stack_.push(Value(function));
-    call(function, 0);
+    ClosureObject* closure = new ClosureObject(function);
+    stack_.pop( );
+    stack_.push(Value(closure));
+    call(closure, 0);
 
     return run( );
 }
@@ -34,8 +38,7 @@ InterpretResult VirtualMachine::interpret(const string& source) {
 // Macro for reading bytes with instruction pointer
 // we use a macro for readability and to force inlining
 #define READ_BYTE( ) (*frame.ip++)
-#define READ_CONSTANT( ) \
-    (frame.function->chunk.constants[static_cast<uint8_t>(READ_BYTE( ))])
+#define READ_CONSTANT( ) (chunk->constants[static_cast<uint8_t>(READ_BYTE( ))])
 // MACROS for type_ checks 2 force inlining
 #define BINARY_NUMBER_CHECK( )                                              \
     do {                                                                    \
@@ -49,12 +52,14 @@ InterpretResult VirtualMachine::interpret(const string& source) {
 InterpretResult VirtualMachine::run( ) {
     CallFrame* current_frame = &frames_[frame_count_ - 1];
     CallFrame frame = *current_frame;
+    Chunk* chunk = &frame.closure->function->chunk;
 
     // switches CallFrame and updates current frame
     auto switch_frame = [&]( ) {
         *current_frame = frame;
         current_frame = &frames_[frame_count_ - 1];
         frame = *current_frame;
+        chunk = &frame.closure->function->chunk;
     };
     // updates current frame
     auto update_frame = [&]( ) {
@@ -71,9 +76,7 @@ InterpretResult VirtualMachine::run( ) {
         }
         std::cout << "**********NEXT INSTRUCTION***************" << std ::endl;
         disassemble_instruction(
-            frame->function->chunk,
-            static_cast<int>(frame->ip -
-                             frame->function->chunk.opcodes.head( )));
+            *chunk, static_cast<int>(frame.ip - chunk->opcodes.head( )));
 #endif
         switch (READ_BYTE( )) {
         case OP_CONSTANT: {
@@ -84,7 +87,7 @@ InterpretResult VirtualMachine::run( ) {
         case OP_CONSTANT_LONG: {
             uint32_t const_idx = constant_long_idx(frame.ip);
             frame.ip += 3;
-            Value constant = frame.function->chunk.constants[const_idx];
+            Value constant = chunk->constants[const_idx];
             stack_.push(constant);
             break;
         }
@@ -186,8 +189,7 @@ InterpretResult VirtualMachine::run( ) {
         case OP_DEFINE_GLOBAL_LONG: {
             uint32_t const_idx = constant_long_idx(frame.ip);
             frame.ip += 3;
-            StringObject* name =
-                frame.function->chunk.constants[const_idx].string( );
+            StringObject* name = chunk->constants[const_idx].string( );
             global_table_.insert(name, stack_.peek(0));
             stack_.pop( );    // late pop GC related
             break;
@@ -206,8 +208,7 @@ InterpretResult VirtualMachine::run( ) {
         case OP_GET_GLOBAL_LONG: {
             uint32_t const_idx = constant_long_idx(frame.ip);
             frame.ip += 3;
-            StringObject* name =
-                frame.function->chunk.constants[const_idx].string( );
+            StringObject* name = chunk->constants[const_idx].string( );
             entry_type& entry = global_table_.find(name);
             if (entry.type( ) != EntryType::USED) {
                 update_frame( );
@@ -231,8 +232,7 @@ InterpretResult VirtualMachine::run( ) {
         case OP_SET_GLOBAL_LONG: {
             uint32_t const_idx = constant_long_idx(frame.ip);
             frame.ip += 3;
-            StringObject* name =
-                frame.function->chunk.constants[const_idx].string( );
+            StringObject* name = chunk->constants[const_idx].string( );
             entry_type& entry = global_table_.find(name);
             if (entry.type( ) != EntryType::USED) {
                 update_frame( );
@@ -324,8 +324,73 @@ InterpretResult VirtualMachine::run( ) {
             switch_frame( );
             break;
         }
+        case OP_CLOSURE: {
+            FunctionObject* function = READ_CONSTANT( ).function( );
+            ClosureObject* closure = new ClosureObject(function);
+            stack_.push(Value(closure));
+            // upvalue handling
+            for (int i = 0; i < closure->upvalue_count; i++) {
+                uint8_t is_local = READ_BYTE( );
+                uint8_t idx = READ_BYTE( );
+                if (is_local) {
+                    closure->upvalues[i] = capture_upvalue(frame.slots + idx);
+                } else {
+                    closure->upvalues[i] = frame.closure->upvalues[idx];
+                }
+            }
+            break;
+        }
+        case OP_CLOSURE_LONG: {
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            FunctionObject* function = chunk->constants[const_idx].function( );
+            ClosureObject* closure = new ClosureObject(function);
+            stack_.push(Value(closure));
+            // upvalue handling
+            for (int i = 0; i < closure->upvalue_count; i++) {
+                uint8_t is_local = constant_long_idx(frame.ip);
+                frame.ip+=3;
+                uint8_t idx = constant_long_idx(frame.ip);
+                frame.ip+=3;
+                if (is_local) {
+                    closure->upvalues[i] = capture_upvalue(frame.slots + idx);
+                } else {
+                    closure->upvalues[i] = frame.closure->upvalues[idx];
+                }
+            }
+            break;
+        }
+        case OP_GET_UPVALUE: {
+            uint8_t upvalue_idx = READ_BYTE( );
+            stack_.push(*frame.closure->upvalues[upvalue_idx]->location);
+            break;
+        }
+        case OP_GET_UPVALUE_LONG: {
+            uint32_t upvalue_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            // NO RUNTIME CHECK of upvalue_idx max size
+            stack_.push(*frame.closure->upvalues[upvalue_idx]->location);
+            break;
+        }
+        case OP_SET_UPVALUE: {
+            uint8_t upvalue_idx = READ_BYTE( );
+            *frame.closure->upvalues[upvalue_idx]->location = stack_.peek(0);
+            break;
+        }
+        case OP_SET_UPVALUE_LONG: {
+            uint8_t upvalue_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            *frame.closure->upvalues[upvalue_idx]->location = stack_.peek(0);
+            break;
+        }
+        case OP_CLOSE_UPVALUE: {
+            close_upvalues(stack_.top( ) - 1);
+            stack_.pop();
+            break;
+        }
         case OP_RETURN: {
             Value result = stack_.pop( );
+            close_upvalues(frame.slots);
             frame_count_--;
             if (frame_count_ == 0) {
                 stack_.pop( );
@@ -334,9 +399,6 @@ InterpretResult VirtualMachine::run( ) {
             stack_.set_top(frame.slots);
             stack_.push(result);
 
-            // *current_frame = frame;
-            // current_frame = &frames_[frame_count_ - 1];
-            // frame = *current_frame;
             switch_frame( );
             break;
         }
@@ -351,8 +413,9 @@ bool VirtualMachine::call_value(Value callee, uint arg_count) {
         return false;
     }
     switch (callee.object_type( )) {
-    case OBJ_FUNCTION:
-        return call(callee.function( ), arg_count);
+    case OBJ_CLOSURE: {
+        return call(callee.closure( ), arg_count);
+    }
     case OBJ_NATIVE: {
         NativeFunction native_function = callee.native_function( );
         Value result = native_function(arg_count, stack_.top( ) - arg_count);
@@ -366,10 +429,43 @@ bool VirtualMachine::call_value(Value callee, uint arg_count) {
     }
 }
 
-bool VirtualMachine::call(FunctionObject* function, uint arg_count) {
-    if (arg_count != function->arity) {
-        runtime_error(
-            "Expected %d arguments but got %d.", function->arity, arg_count);
+UpValueObject* VirtualMachine::capture_upvalue(Value* local_value) {
+    UpValueObject *prev= nullptr, *new_upvalue, *upvalue=open_upvalues_;
+    while (upvalue != nullptr && upvalue->location > local_value) {
+        prev = upvalue;
+        upvalue = prev->next_upvalue;
+    }
+
+    if (upvalue != nullptr && upvalue->location == local_value) {
+        return upvalue;
+    }
+
+    new_upvalue = new UpValueObject(local_value);
+    new_upvalue->next_upvalue = upvalue;
+
+    if (prev == nullptr) {
+        open_upvalues_ = new_upvalue;
+    } else {
+        prev->next_upvalue = new_upvalue;
+    }
+
+    return new_upvalue;
+}
+
+void VirtualMachine::close_upvalues(Value* last) {
+    while (open_upvalues_ != nullptr && open_upvalues_->location >= last) {
+        UpValueObject* upvalue = open_upvalues_;
+        upvalue->closed = *upvalue->location;
+        upvalue->location = &upvalue->closed;
+        open_upvalues_ = upvalue->next_upvalue;
+    }
+}
+
+bool VirtualMachine::call(ClosureObject* closure, uint arg_count) {
+    if (arg_count != closure->function->arity) {
+        runtime_error("Expected %d arguments but got %d.",
+                      closure->function->arity,
+                      arg_count);
         return false;
     }
 
@@ -379,8 +475,8 @@ bool VirtualMachine::call(FunctionObject* function, uint arg_count) {
     }
 
     CallFrame* frame = &frames_[frame_count_++];
-    frame->function = function;
-    frame->ip = function->chunk.opcodes.head( );
+    frame->closure = closure;
+    frame->ip = closure->function->chunk.opcodes.head( );
     frame->slots = stack_.top( ) - arg_count - 1;
     return true;
 }
@@ -395,7 +491,7 @@ void VirtualMachine::runtime_error(const char* fmt, ...) {
 
     for (int i = frame_count_ - 1; i >= 0; i--) {
         CallFrame& call_frame = frames_[i];
-        FunctionObject* function = call_frame.function;
+        FunctionObject* function = call_frame.closure->function;
         size_t offset = call_frame.ip - function->chunk.opcodes.head( );
         uint line = line_number(function->chunk, offset);
         std::cerr << "[line " << line << "] in ";

@@ -6,6 +6,11 @@
 #include "value.hpp"
 #include "object.hpp"
 
+
+////////////////////////////////////////////////////////////////////////////////
+// Arithmetic Operators
+////////////////////////////////////////////////////////////////////////////////
+
 Value operator+(const Value& v1, const Value& v2) {
     return Value(v1.number_value( ) + v2.number_value( ));
 }
@@ -47,8 +52,8 @@ bool operator!=(const Value& v1, const Value& v2) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Operator for numeric types where check for value_type.numeric() has been
-// made in VM runtime
+// Comparison operators for numeric types where check for value_type.numeric()
+// type checks are done in VM runtime
 ////////////////////////////////////////////////////////////////////////////////
 bool operator<(const Value& v1, const Value& v2) {
     return v1.number_value( ) < v2.number_value( );
@@ -91,21 +96,27 @@ void print_object(Value value) {
         std::cout << value.c_string( );
         break;
     case OBJ_FUNCTION: {
-        // print_function
-        FunctionObject* function = value.function( );
-        if (function->name == nullptr) {
-            std::cout << "<script>";
-            return;
-        }
-        std::cout << "<fn " << value.function( )->name->chars << ">";
+        print_function(value.function());
         break;
     }
     case OBJ_NATIVE:
         std::cout << "<native fn>";
         break;
+    case OBJ_CLOSURE:
+        print_function(value.closure()->function);
+        break;
+    case OBJ_UPVALUE:
+        std::cout << "upvalue";
     }
 }
 
+void print_function(FunctionObject* function) {
+    if (function->name == nullptr) {
+        std::cout << "<script>";
+        return;
+    }
+    std::cout << "<fn " << function->name->chars << ">";
+}
 ObjectType Value::object_type( ) const {
     return value_.obj->type;
 }
@@ -124,16 +135,22 @@ FunctionObject* Value::function( ) const {
 NativeFunction Value::native_function( ) const {
     return static_cast<NativeObject*>(value_.obj)->function;
 }
+ClosureObject* Value::closure( ) const {
+    return static_cast<ClosureObject*>(value_.obj);
+}
 
-// FIXME: This can be cleaned up by using concept + template -> 1 function
-// instead of 3 !!!
+// FIXME: Cant this be cleaned up by using concept + template -> 1 constructor
+// instead of 4 even though class is not template?
 Value::Value(StringObject* string_obj) : value_type_(VAL_OBJ), value_( ) {
     value_.obj = static_cast<Object*>(string_obj);
 }
 Value::Value(FunctionObject* function_obj) : value_type_(VAL_OBJ), value_( ) {
     value_.obj = static_cast<Object*>(function_obj);
 }
-Value::Value(NativeObject* native_obj) : value_type_(VAL_OBJ), value_() {
+Value::Value(NativeObject* native_obj) : value_type_(VAL_OBJ), value_( ) {
+    value_.obj = static_cast<Object*>(native_obj);
+}
+Value::Value(ClosureObject* native_obj) : value_type_(VAL_OBJ), value_( ) {
     value_.obj = static_cast<Object*>(native_obj);
 }
 

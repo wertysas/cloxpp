@@ -23,5 +23,6 @@ using std::cout;
 
 // #define DEBUG_PRINT_CODE
 // #define DEBUG_TRACE_EXECUTION
+//#define DEBUG_PRINT_TOKENS
 
 #endif //CLOXPP_COMMON_HPP

@@ -47,7 +47,7 @@ void free_objects( ) {
 void free_object(Object* object) {
     switch (object->type) {
     case OBJ_STRING: {
-        StringObject* string = reinterpret_cast<StringObject*>(object);
+        auto* string = reinterpret_cast<StringObject*>(object);
         memory::free_array<char>(string->chars, string->length + 1);
         memory::free<StringObject>(object);
         break;
@@ -59,6 +59,13 @@ void free_object(Object* object) {
     case OBJ_NATIVE: {
         delete static_cast<NativeObject*>(object);
         break;
+    }
+    case OBJ_CLOSURE: {
+        delete static_cast<ClosureObject*>(object);
+        break;
+    }
+    case OBJ_UPVALUE: {
+        delete static_cast<UpValueObject*>(object);
     }
     }
 }

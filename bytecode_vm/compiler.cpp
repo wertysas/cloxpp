@@ -6,7 +6,7 @@
 #include "scanner.hpp"
 #include "parser.hpp"
 
-#ifdef DEBUG_PRINT_CODE
+#if defined DEBUG_PRINT_CODE || defined DEBUG_PRINT_TOKENS
 #include "debug.hpp"
 #endif
 
@@ -17,7 +17,7 @@ FunctionObject* compile(const string &source) {
     std::vector<Token> tokens = scanner.scan_tokens();
     ErrorReporter error_reporter{};
     FunctionScope main_scope{};
-#ifdef DEBUG_PRINT_CODE
+#ifdef DEBUG_PRINT_TOKENS
     std::cout << "tokens size: " << tokens.size() << std::endl;
     for (auto t: tokens) {
         std::cout << "TokenType: " << token_to_string(t.type) << std::endl;
