@@ -47,9 +47,7 @@ void free_objects( ) {
 void free_object(Object* object) {
     switch (object->type) {
     case OBJ_STRING: {
-        auto* string = reinterpret_cast<StringObject*>(object);
-        memory::free_array<char>(string->chars, string->length + 1);
-        memory::free<StringObject>(object);
+        delete static_cast<StringObject*>(object);
         break;
     }
     case OBJ_FUNCTION: {

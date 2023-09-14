@@ -193,11 +193,12 @@ void HashTable<Key, T, Hash, KeyEqual, A>::reset(size_t size) {
     entries_ = A::allocate(size);
 }
 
-template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
-void HashTable<Key, T, Hash, KeyEqual, A>::free_storage( ) {
-    memory::free_array<TableEntry>(entries_, capacity_);
-    reset( );
-}
+// template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
+// void HashTable<Key, T, Hash, KeyEqual, A>::free_storage( ) {
+//     memory::free_array<TableEntry>(entries_, capacity_);
+//     reset( );
+// }
+
 template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
 void HashTable<Key, T, Hash, KeyEqual, A>::resize_table( ) {
     size_t old_capacity_ = capacity_;

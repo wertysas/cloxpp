@@ -101,7 +101,7 @@ void Parser::number(bool assignable) {
 }
 
 void Parser::string(bool assignable) {
-    Value val{str_from_chars(previous( ).start + 1, previous( ).length - 2)};
+    Value val{new StringObject(previous( ).start + 1, previous( ).length - 2)};
     chunk( ).add_constant(val, previous( ).line);
 }
 
@@ -294,7 +294,7 @@ void Parser::function_declaration( ) {
 }
 
 void Parser::function( ) {
-    StringObject* name = str_from_chars(previous( ).start, previous( ).length);
+    StringObject* name = new StringObject(previous( ).start, previous( ).length);
     FunctionScope function_scope(scope_, name);
     update_scope(&function_scope);
     begin_scope( );    // no end_scope() since scope lifetime only is inside
@@ -506,7 +506,7 @@ void Parser::synchronize( ) {
 }
 uint Parser::identifier_constant(const Token& token) {
     return chunk( ).constants.idx_append(
-        Value(str_from_chars(token.start, token.length)));
+        Value(new StringObject(token.start, token.length)));
 }
 void Parser::define_variable(uint idx) {
     if (scope_->scope_depth > 0) {

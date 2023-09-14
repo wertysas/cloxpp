@@ -5,7 +5,7 @@
 #ifndef CLOXPP_COMMON_HPP
 #define CLOXPP_COMMON_HPP
 
-#include <stdint.h> // typedefs for fixed width integer types and macro constants
+#include <cstdint>
 #include <cstddef>
 #include <iostream>
 #include <iomanip>
@@ -24,5 +24,6 @@ using std::cout;
 // #define DEBUG_PRINT_CODE
 // #define DEBUG_TRACE_EXECUTION
 //#define DEBUG_PRINT_TOKENS
+// #define DEBUG_STRESS_GC
 
 #endif //CLOXPP_COMMON_HPP

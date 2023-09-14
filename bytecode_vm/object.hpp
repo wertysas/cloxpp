@@ -6,7 +6,7 @@
 #define CLOXPP_OBJECT_HPP
 
 #include "common.hpp"
-#include "memory.hpp"
+#include "memory/memory.hpp"
 #include "chunk.hpp"
 #include <cstring>
 
@@ -15,13 +15,23 @@ using HashType = uint32_t;
 
 struct Object {
     ObjectType type;
-    Object* next = nullptr;
+    Object* next;
+    explicit Object(ObjectType object_type)
+        : type(object_type), next(nullptr) {}
 };
 
+// This object owns the memory it's chars member points to
 struct StringObject : public Object {
     size_t length;
     char* chars;
     uint32_t hash;    // implement through mixin/CRTP?
+
+    // memory of chars must be allocated and freed
+    StringObject(const char* str_chars, uint str_len);
+    ~StringObject();
+
+    void* operator new(size_t);
+    void operator delete(void* p);
 };
 
 struct StringHash {
@@ -48,9 +58,9 @@ struct FunctionObject : public Object {
     Chunk chunk;
     StringObject* name;
 
-    FunctionObject( ) : arity(0), upvalue_count(0), chunk( ), name(nullptr) {
-        type = OBJ_FUNCTION;
-    }
+    FunctionObject( )
+        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), chunk( ),
+          name(nullptr) {}
 
     void* operator new(size_t);
     void operator delete(void* p);
@@ -62,8 +72,7 @@ struct UpValueObject : public Object {
     UpValueObject* next_upvalue;
 
     explicit UpValueObject(Value* loc)
-        : location(loc), closed( ), next_upvalue(nullptr) {
-        type = OBJ_UPVALUE;
+        : Object(OBJ_UPVALUE), location(loc), closed( ), next_upvalue(nullptr) {
     }
 
     void* operator new(size_t);
@@ -76,8 +85,7 @@ struct ClosureObject : public Object {
     uint upvalue_count;
 
     explicit ClosureObject(FunctionObject* fn)
-        : function(fn), upvalue_count(fn->upvalue_count) {
-        type = OBJ_CLOSURE;
+        : Object(OBJ_CLOSURE), function(fn), upvalue_count(fn->upvalue_count) {
         upvalues = memory::allocate<UpValueObject*>(upvalue_count);
         for (int i = 0; i < upvalue_count; i++) {
             upvalues[i] = nullptr;
@@ -92,9 +100,8 @@ struct ClosureObject : public Object {
 typedef Value (*NativeFunction)(uint arg_count, Value* args);
 struct NativeObject : public Object {
     NativeFunction function;
-    explicit NativeObject(NativeFunction fn) : function(fn) {
-        type = OBJ_NATIVE;
-    }
+    explicit NativeObject(NativeFunction fn)
+        : Object(OBJ_NATIVE), function(fn) {}
     void* operator new(size_t);
     void operator delete(void* p);
 };

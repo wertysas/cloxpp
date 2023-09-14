@@ -5,6 +5,7 @@
 #include <cstring>
 #include "object.hpp"
 
+// FIXME: This should be a constructor of StringObject!
 StringObject* str_from_chars(const char *chars, uint length) {
     char* cstr = memory::allocate<char>(length + 1);
     memcpy(cstr, chars, length);
@@ -46,8 +47,29 @@ HashType hash_string(const char *str, uint length) {
     return hash;
 }
 
+StringObject::StringObject(const char* str_chars, uint str_len) : Object(OBJ_STRING) {
+    // string memory allocation
+    char* cstr = memory::allocate<char>(str_len + 1);
+    memcpy(cstr, str_chars, str_len);
+    cstr[str_len] = '\0';
+    // members
+    length = str_len;
+    chars = cstr;
+    hash  = hash_string(cstr, str_len);
+
+}
+
+StringObject::~StringObject( ) {
+    memory::free_array<char>(chars, length+1);
+}
+
 // TODO: WRITE ONE GENERIC IMPLEMENTATION FOR ALL CLASSES DERIVED FROM OBJECT
-// (IF POSSIBLE)
+void* StringObject::operator new(size_t) {
+    return allocate_object<StringObject>();
+}
+void StringObject::operator delete(void* p) {
+    memory::free<StringObject>(p);
+}
 void* FunctionObject::operator new(size_t) {
     return allocate_object<FunctionObject>();
 }

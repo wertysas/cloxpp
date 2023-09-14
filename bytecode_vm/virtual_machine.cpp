@@ -505,7 +505,7 @@ void VirtualMachine::runtime_error(const char* fmt, ...) {
 }
 void VirtualMachine::define_native_function(const char* name,
                                             NativeFunction native_function) {
-    stack_.push(Value(str_from_chars(name, static_cast<uint>(strlen(name)))));
+    stack_.push(Value(new StringObject(name, static_cast<uint>(strlen(name)))));
     stack_.push(Value(new NativeObject(native_function)));
     global_table_.insert(stack_.peek(1).string( ), stack_.peek(0));
     stack_.pop( );

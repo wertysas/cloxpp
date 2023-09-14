@@ -10,7 +10,7 @@
 #include "debug.hpp"
 #include "virtual_machine.hpp"
 #include "compiler.hpp"
-#include "memory.hpp"
+#include "memory/memory.hpp"
 
 void repl(VirtualMachine& VM);
 

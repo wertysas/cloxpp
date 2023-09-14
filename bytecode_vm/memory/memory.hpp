@@ -44,7 +44,7 @@ void free_array(void* ptr, size_t size) {
     reallocate(ptr, sizeof(T)*size, 0);
 }
 
-}
+} // end of namespace memory
 
 
 #endif //CLOXPP_MEMORY_HPP

@@ -7,7 +7,7 @@
 
 
 #include "common.hpp"
-#include "memory.hpp"
+#include "memory/memory.hpp"
 
 template <typename T>
 class DynamicArray {
