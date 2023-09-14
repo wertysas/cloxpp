@@ -7,7 +7,20 @@
 #include "../doctest.h"
 #include "object.hpp"
 
-TEST_CASE("StringObject") {
-    StringObject* str = new StringObject("12345", 5);
+TEST_SUITE("Objects") {
+    TEST_CASE("StringObject") {
+        const char* chars = "axkjlkjhhlaksdlaskdj";
+        int len = strlen(chars);
+        StringObject* str = new StringObject(chars, len);
+
+        // Check that members correct
+        CHECK( str->length == len );
+        CHECK(memcmp(str->chars, chars, len)==0);
+        CHECK(str->hash == hash_string(chars, len));
+
+        delete str;
+
+    }
+
 
 }

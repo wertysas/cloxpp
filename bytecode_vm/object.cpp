@@ -5,15 +5,6 @@
 #include <cstring>
 #include "object.hpp"
 
-// FIXME: This should be a constructor of StringObject!
-StringObject* str_from_chars(const char *chars, uint length) {
-    char* cstr = memory::allocate<char>(length + 1);
-    memcpy(cstr, chars, length);
-    cstr[length] = '\0';
-    HashType hash = hash_string(cstr, length);
-    return allocate_string(cstr, length, hash);
-}
-
 StringObject* allocate_string(char *chars, uint length, HashType hash) {
     auto* string = allocate_object<StringObject>();
     string->type = OBJ_STRING;
@@ -23,6 +14,7 @@ StringObject* allocate_string(char *chars, uint length, HashType hash) {
     return string;
 }
 
+// TODO: It's possible this can be cleaned with a new ctor of strobj
 StringObject* concatenate(StringObject *str1, StringObject *str2) {
     size_t length = str1->length + str2->length;
     char* chars = memory::allocate<char>(length+1);

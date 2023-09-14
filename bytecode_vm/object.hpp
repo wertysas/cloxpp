@@ -30,6 +30,8 @@ struct StringObject : public Object {
     StringObject(const char* str_chars, uint str_len);
     ~StringObject();
 
+    StringObject& operator=(StringObject&& string_object) noexcept;
+
     void* operator new(size_t);
     void operator delete(void* p);
 };
@@ -87,7 +89,7 @@ struct ClosureObject : public Object {
     explicit ClosureObject(FunctionObject* fn)
         : Object(OBJ_CLOSURE), function(fn), upvalue_count(fn->upvalue_count) {
         upvalues = memory::allocate<UpValueObject*>(upvalue_count);
-        for (int i = 0; i < upvalue_count; i++) {
+        for (uint i = 0; i < upvalue_count; i++) {
             upvalues[i] = nullptr;
         }
     }
