@@ -11,11 +11,18 @@ The specification of Lox can be found in [chapter 3](https://craftinginterpreter
 - Supports closures
 -  . . .
 
+## Implementation status 
+Currently the VM supports all but two features of lox:
+- No Garbage Collector (work in progess, currently benchmarking different allocator models and how they affect the GC).
+- No user defined classes.
+
+CloxPP  passes all unit tests from [munificient/craftinginterpreters](https://github.com/munificent/craftinginterpreters#testing)
+(except 2 which it's expected to fail, since it supports larger constant pools for chunks) up to chapter 25.
+**Note** that the unit tests requires an older version of the Dart SDK to run.
+
 ## Installation
-The build system is cmake ...
-```
-cmake ...
-```
+Cloxpp uses CMake as it's build system. The target to build is cloxpp from the top level
+[CMakeLists.txt](CMakeLists.txt)
 
 ## Usage
 The VM can be run as an interpreter in a shell by the command
