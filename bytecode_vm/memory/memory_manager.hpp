@@ -6,12 +6,23 @@
 #define CLOXPP_MEMORY_MANAGER_HPP
 
 #include "allocators.hpp"
-#include "object.hpp"
 
 namespace memory {
-class MemoryManager {};
-    PoolAllocator<Mallocator, sizeof(StringObject), 256> str_obj_pool();
+
+template <typename Allocator>
+class MemoryManager : private Allocator {
+    void collect();
+
+    public:
+    void* allocate(size_t size) {
+        return Allocator::allocate(size);
+    }
+    void deallocate(void* ptr) {
+        Allocator::deallocate(ptr);
+    }
+};
 
 } // namespace memory
+
 
 #endif    // CLOXPP_MEMORY_MANAGER_HPP

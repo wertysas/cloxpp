@@ -9,6 +9,9 @@
 // global linked list to keep track of every allocated object
 Object* memory::objects = nullptr;
 
+// Memory manager;
+memory::MemoryManager<Mallocator> memory::memory_manager{};
+
 void free_object(Object* object);
 
 // realloc wrapper used for garbage collection purposes which just as

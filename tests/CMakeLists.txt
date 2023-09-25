@@ -10,4 +10,9 @@ add_executable(OBJECT_MEMORY_TEST
         ../bytecode_vm/object.cpp
         ../bytecode_vm/memory/memory.cpp)
 
+add_executable(object_info
+        memory/object_info.cpp
+        ../bytecode_vm/object.cpp
+        ../bytecode_vm/memory/memory.cpp)
+
 add_executable(ALLOCATOR_TEST memory/allocator_tests.cpp)

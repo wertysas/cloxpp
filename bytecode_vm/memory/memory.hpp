@@ -7,7 +7,8 @@
 
 #include <iostream>
 #include "common.hpp"
-
+#include "memory_manager.hpp"
+#include "allocators.hpp"
 
 #define INIT_CAPACITY 8
 #define GROWTH_CONSTANT 2
@@ -19,24 +20,20 @@ struct Object;
 void free_objects();
 void free_object(Object *object);
 
+
 namespace memory {
+
+extern Object* objects;
+extern MemoryManager<Mallocator> memory_manager;
 
 template<typename T>
 T* allocate(uint count) {
-    return reinterpret_cast<T*>(reallocate(nullptr, 0, sizeof(T)*count));
+    return reinterpret_cast<T*>(memory_manager.allocate(sizeof(T)*count));
 }
-
-
-
-
-extern Object* objects;
 
 template<typename T>
 void free(void* ptr) {
-    if constexpr (std::is_base_of_v<Object, T>) {
-
-    }
-    reallocate(ptr, sizeof(T), 0);
+    memory_manager.deallocate(ptr);
 }
 
 template<typename T>
