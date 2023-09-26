@@ -5,6 +5,31 @@
 #include <cstring>
 #include "object.hpp"
 
+std::ostream&  operator<<(std::ostream& os, const ObjectType& type) {
+    switch (type) {
+    case OBJ_CLOSURE:
+        os << "OBJ_CLOSURE";
+        break;
+    case OBJ_UPVALUE:
+        os << "OBJ_UPVALUE";
+        break;
+    case OBJ_FUNCTION:
+        os << "OBJ_FUNCTION";
+        break;
+    case OBJ_NATIVE:
+        os << "OBJ_NATIVE";
+        break;
+    case OBJ_STRING:
+        os << "OBJ_STRING";
+        break;
+    default:
+        os << " error (no type defined)";
+        break;
+    }
+    return os;
+}
+
+
 StringObject* allocate_string(char *chars, uint length, HashType hash) {
     auto* string = allocate_object<StringObject>();
     string->type = OBJ_STRING;

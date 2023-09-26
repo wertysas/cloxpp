@@ -9,14 +9,13 @@
 #include "chunk.hpp"
 #include "debug.hpp"
 #include "virtual_machine.hpp"
+#include "parser.hpp"
 #include "compiler.hpp"
 #include "memory/memory.hpp"
 
-void repl(VirtualMachine& VM);
+void repl(VirtualMachine& VM, Compiler& compiler);
 
-InterpretResult interpret(std::string& basicString, VirtualMachine& VM);
-
-void run_file(char* string, VirtualMachine& VM);
+void run_file(char* string, VirtualMachine& VM, Compiler& compiler);
 
 using std::cin;
 using std::cout;
@@ -25,10 +24,14 @@ using std::endl;
 
 int main(int argc, char* argv[]) {
     VirtualMachine VM{ };
+    // memory_manager
+    memory::memory_manager.init(&VM);
+    Compiler compiler{};
+
     if (argc == 1) {
-        repl(VM);
+        repl(VM, compiler);
     } else if (argc == 2) {
-        run_file(argv[1], VM);
+        run_file(argv[1], VM, compiler);
     } else {
         std::cerr << "Usage cloxpp [path]" << std::endl;
         exit(64);
@@ -36,7 +39,7 @@ int main(int argc, char* argv[]) {
     free_objects();
 }
 
-void run_file(char* file_path, VirtualMachine& VM) {
+void run_file(char* file_path, VirtualMachine& VM, Compiler& compiler) {
     std::ifstream fs(file_path);
     if (fs.fail( )) {
         cout << "Failed top open file: " << file_path << endl;
@@ -44,7 +47,8 @@ void run_file(char* file_path, VirtualMachine& VM) {
     std::stringstream file_buffer;
     file_buffer << fs.rdbuf();
     std::string source = file_buffer.str( );
-    InterpretResult result = VM.interpret(source);
+    FunctionObject* main = compiler.compile(source);
+    InterpretResult result = VM.interpret(main);
 
     if (result == INTERPRET_COMPILE_ERROR) {
         exit(65);
@@ -54,7 +58,7 @@ void run_file(char* file_path, VirtualMachine& VM) {
     }
 }
 
-void repl(VirtualMachine& VM) {
+void repl(VirtualMachine& VM, Compiler& compiler) {
     std::cout << "  _        __  __\n"
                  " | |    ___\\ \\/ /\n"
                  " | |   / _ \\\\  / \n"
@@ -75,7 +79,12 @@ void repl(VirtualMachine& VM) {
             }
             break;
         }
-        VM.interpret(input_line);
+        if (input_line == "exit") {
+            cout << "\n LoX exited succesfully!" << endl;
+            return;
+        }
+        FunctionObject* function = compiler.compile(input_line);
+        VM.interpret(function);
     }
 }
 

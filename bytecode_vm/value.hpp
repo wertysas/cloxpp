@@ -5,8 +5,8 @@
 #ifndef CLOXPP_VALUE_HPP
 #define CLOXPP_VALUE_HPP
 
+#include <iosfwd>
 #include "common.hpp"
-
 
 struct Object;
 struct StringObject;
@@ -21,6 +21,7 @@ enum ObjectType : uint8_t {
     OBJ_NATIVE,
     OBJ_STRING
 };
+
 
 enum ValueType { VAL_BOOL, VAL_NIL, VAL_NUMBER, VAL_OBJ };
 
@@ -55,6 +56,9 @@ class Value {
     // https://en.cppreference.com/w/cpp/language/copy_constructor
     Value(const Value& value) = default;
     Value& operator=(const Value& value) = default;
+
+    // GC mark_object setter
+    void mark() const;
 
     // ValueType accessors
     inline bool bool_value( ) const { return value_.boolean; }

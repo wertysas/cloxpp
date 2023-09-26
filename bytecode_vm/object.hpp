@@ -6,6 +6,7 @@
 #define CLOXPP_OBJECT_HPP
 
 #include "common.hpp"
+#include "memory/memory_manager.hpp"
 #include "memory/memory.hpp"
 #include "chunk.hpp"
 #include <cstring>
@@ -16,19 +17,31 @@ using HashType = uint32_t;
 struct Object {
     ObjectType type;
     Object* next;
+    bool marked;
     explicit Object(ObjectType object_type)
-        : type(object_type), next(nullptr) {}
+        : type(object_type), marked(false) {
+        next = memory::objects;
+        memory::objects = this;
+    }
+    inline void mark() { marked = true; }
+};
+
+std::ostream& operator<<(std::ostream& os, const ObjectType& type);
+
+inline void mark_object(Object* obj) {
+    if (obj == nullptr) return;
+    obj->mark();
 };
 
 // This object owns the memory it's chars member points to
 struct StringObject : public Object {
     size_t length;
     char* chars;
-    uint32_t hash;    // implement through mixin/CRTP?
+    uint32_t hash;
 
     // memory of chars must be allocated and freed
     StringObject(const char* str_chars, uint str_len);
-    ~StringObject();
+    ~StringObject( );
 
     StringObject& operator=(StringObject&& string_object) noexcept;
 
@@ -108,15 +121,19 @@ struct NativeObject : public Object {
     void operator delete(void* p);
 };
 
+
 template<typename T>
 T* allocate_object( ) {
     size_t size = sizeof(T);
-    Object* object = reinterpret_cast<Object*>(reallocate(nullptr, 0, size));
+    Object* object =
+        reinterpret_cast<Object*>(memory::memory_manager.allocate(size));
 
-    // Updating object list used to keep track of objects allocated
-    object->next = memory::objects;
-    memory::objects = object;
-
+    // object->next = memory::objects;
+    // memory::objects = object;
+#ifdef DEBUG_LOG_GC
+    std::cout << object << " allocate " << size << " for type "
+              << typeid(T).name( ) << "\n";
+#endif
     return reinterpret_cast<T*>(object);
 }
 

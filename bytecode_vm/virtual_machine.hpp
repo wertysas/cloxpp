@@ -14,7 +14,7 @@
 #include "cpp_module.hpp"
 
 
-using ValueStack = StaticStack<Value, STACK_MAX>;
+
 enum InterpretResult {
     INTERPRET_SUCCESS,
     INTERPRET_COMPILE_ERROR,
@@ -28,25 +28,26 @@ struct CallFrame {
     Value* slots; // pointer to 1st slot in the stack the function can use
 };
 
-//template <Size=FRAMES_MAX>
-//class CallFrames {
-//    CallFrame[]
-//};
-
 
 class VirtualMachine {
     public:
-    InterpretResult interpret(const string& source);
+    InterpretResult interpret(FunctionObject* function);
     InterpretResult run( );
     VirtualMachine( )
         : stack_( ), global_table_( ) {
         define_native_function("clock", native_clock);
     }
 
-    private:
+    void mark_globals();
+    void mark_stack();
+    void mark_call_frames();
+    void mark_upvalues();
+
+        private:
     using table_type = HashTable<StringObject*, Value, StringHash, StringEqual>;
     using entry_type = TableEntry<StringObject*, Value>;
-    ValueStack stack_;
+    using value_stack = StaticStack<Value, STACK_MAX>;
+    value_stack stack_;
     table_type global_table_;
     CallFrame frames_[FRAMES_MAX];
     uint frame_count_ = 0;

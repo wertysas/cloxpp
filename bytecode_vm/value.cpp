@@ -96,14 +96,14 @@ void print_object(Value value) {
         std::cout << value.c_string( );
         break;
     case OBJ_FUNCTION: {
-        print_function(value.function());
+        print_function(value.function( ));
         break;
     }
     case OBJ_NATIVE:
         std::cout << "<native fn>";
         break;
     case OBJ_CLOSURE:
-        print_function(value.closure()->function);
+        print_function(value.closure( )->function);
         break;
     case OBJ_UPVALUE:
         std::cout << "upvalue";
@@ -152,6 +152,11 @@ Value::Value(NativeObject* native_obj) : value_type_(VAL_OBJ), value_( ) {
 }
 Value::Value(ClosureObject* native_obj) : value_type_(VAL_OBJ), value_( ) {
     value_.obj = static_cast<Object*>(native_obj);
+}
+void Value::mark( ) const {
+    if (is_object( )) {
+        mark_object(object_value( ));
+    }
 }
 
 

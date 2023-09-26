@@ -24,7 +24,7 @@ set(SOURCE_FILES_VM
         bytecode_vm/value.cpp
         bytecode_vm/virtual_machine.cpp
         bytecode_vm/stack.cpp
-        bytecode_vm/compiler.cpp
+        bytecode_vm/function_scope.cpp
         bytecode_vm/scanner.cpp
         bytecode_vm/token.cpp
         bytecode_vm/parser.cpp
@@ -35,6 +35,8 @@ set(SOURCE_FILES_VM
         bytecode_vm/memory/mark_sweep_collector.hpp
         bytecode_vm/memory/memory_manager.cpp
         bytecode_vm/memory/memory_manager.hpp
-        bytecode_vm/memory/allocators.hpp)
+        bytecode_vm/memory/allocators.hpp
+        bytecode_vm/compiler.hpp
+        bytecode_vm/compiler.cpp)
 
 add_executable(cloxpp ${SOURCE_FILES_VM})

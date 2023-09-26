@@ -17,8 +17,8 @@
 void* reallocate(void* ptr, size_t old_size, size_t new_size);
 
 struct Object;
-void free_objects();
-void free_object(Object *object);
+void free_objects( );
+void free_object(Object* object);
 
 
 namespace memory {
@@ -28,20 +28,24 @@ extern MemoryManager<Mallocator> memory_manager;
 
 template<typename T>
 T* allocate(uint count) {
-    return reinterpret_cast<T*>(memory_manager.allocate(sizeof(T)*count));
+    return reinterpret_cast<T*>(memory_manager.allocate(sizeof(T) * count));
 }
 
 template<typename T>
 void free(void* ptr) {
+#ifdef DEBUG_LOG_GC
+    std::cout << ptr << " free object of type " << typeid(T).name( ) << "\n";
+#endif
     memory_manager.deallocate(ptr);
 }
 
 template<typename T>
 void free_array(void* ptr, size_t size) {
-    reallocate(ptr, sizeof(T)*size, 0);
+    reallocate(ptr, sizeof(T) * size, 0);
 }
 
-} // end of namespace memory
+
+}    // end of namespace memory
 
 
-#endif //CLOXPP_MEMORY_HPP
+#endif    // CLOXPP_MEMORY_HPP

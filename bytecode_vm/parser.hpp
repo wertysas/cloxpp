@@ -10,7 +10,7 @@
 #include "token.hpp"
 #include "error_handling.hpp"
 #include "chunk.hpp"
-#include "compiler.hpp"
+#include "function_scope.hpp"
 
 
 // Precedence enum where the different presedences are in order of importance
@@ -51,6 +51,7 @@ class Parser {
     inline Chunk& chunk( ) const { return scope_->function->chunk; }
 
     FunctionObject* parse_tokens( );
+    FunctionObject* parse_tokens(const std::vector<Token>& tokens, FunctionScope* scope);
 
     // Error handling methods
     void error(uint idx, const char* message);
@@ -114,7 +115,7 @@ class Parser {
     uint previous_;
     uint current_;
     FunctionScope* scope_;
-    const std::vector<Token>& tokens_;
+    std::vector<Token> tokens_;
     ErrorReporter& error_reporter_;
     bool panic_mode_ = false;
     ParseRule parse_rules[40];
