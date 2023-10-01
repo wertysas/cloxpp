@@ -593,7 +593,7 @@ class DOCTEST_INTERFACE String
     static DOCTEST_CONSTEXPR size_type len  = 24;      //!OCLINT avoid private static members
     static DOCTEST_CONSTEXPR size_type last = len - 1; //!OCLINT avoid private static members
 
-    struct view // len should be more than sizeof(view) - because of the last byte for flags
+    struct view // len should be more than sizeof(view) - because of the final byte for flags
     {
         char*    ptr;
         size_type size;
@@ -962,7 +962,7 @@ template <typename T> struct is_rvalue_reference<T&&> : true_type { };
 template<typename T> struct remove_const { using type = T; };
 template <typename T> struct remove_const<const T> { using type = T; };
 
-// Scope intrinsics
+// Compiler intrinsics
 template <typename T> struct is_enum { static DOCTEST_CONSTEXPR bool value = __is_enum(T); };
 template <typename T> struct underlying_type { using type = __underlying_type(T); };
 
@@ -1392,7 +1392,7 @@ DOCTEST_CLANG_SUPPRESS_WARNING_WITH_PUSH("-Wunused-comparison")
         return *this;                                                                              \
     }
 
-struct DOCTEST_INTERFACE Result // NOLINT(*-member-init)
+struct DOCTEST_INTERFACE Result // NOLINT(*-member-set)
 {
     bool   m_passed;
     String m_decomp;
