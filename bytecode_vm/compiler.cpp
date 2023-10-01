@@ -3,6 +3,7 @@
 //
 
 #include "compiler.hpp"
+#include "memory/memory.hpp"
 
 #if defined DEBUG_PRINT_CODE || defined DEBUG_PRINT_TOKENS
 #include "debug.hpp"
@@ -20,9 +21,9 @@ FunctionObject* Compiler::compile(const string& source) {
         }
 #endif
         Parser parser(tokens, &main_scope, error_reporter);
-        //parser.advance();
+        memory::memory_manager.set(&parser);
+        std::cout << "parser set" << std::endl;
         FunctionObject* function = parser.parse_tokens();
-        //parser.consume(TOKEN_EOF, "Expect end of expression.");
 
         return parser.had_error() ? nullptr : function;
 }

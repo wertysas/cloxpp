@@ -42,7 +42,7 @@ StringObject* allocate_string(char *chars, uint length, HashType hash) {
 // TODO: It's possible this can be cleaned with a new ctor of strobj
 StringObject* concatenate(StringObject *str1, StringObject *str2) {
     size_t length = str1->length + str2->length;
-    char* chars = memory::allocate<char>(length+1);
+    char* chars = memory::allocate_array<char>(length + 1);
     memcpy(chars, str1->chars, str1->length);
     memcpy(chars+str1->length, str2->chars, str2->length);
     chars[length]='\0';
@@ -66,7 +66,7 @@ HashType hash_string(const char *str, uint length) {
 
 StringObject::StringObject(const char* str_chars, uint str_len) : Object(OBJ_STRING) {
     // string memory allocation
-    char* cstr = memory::allocate<char>(str_len + 1);
+    char* cstr = memory::allocate_array<char>(str_len + 1);
     memcpy(cstr, str_chars, str_len);
     cstr[str_len] = '\0';
     // members

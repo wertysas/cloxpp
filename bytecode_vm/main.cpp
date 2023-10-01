@@ -25,7 +25,7 @@ using std::endl;
 int main(int argc, char* argv[]) {
     VirtualMachine VM{ };
     // memory_manager
-    memory::memory_manager.init(&VM);
+    memory::memory_manager.set(&VM);
     Compiler compiler{};
 
     if (argc == 1) {

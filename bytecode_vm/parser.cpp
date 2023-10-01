@@ -732,3 +732,11 @@ void Parser::emit_return( ) {
     emit_byte(OP_NIL);
     emit_byte(OP_RETURN);
 }
+
+void Parser::mark_compiler_roots( ) {
+    auto* scope = scope_;
+    while (scope != nullptr) {
+        memory::mark_object(scope->function);
+        scope = scope->enclosing;
+    }
+}

@@ -7,12 +7,7 @@
 
 #include <iosfwd>
 #include "common.hpp"
-
-struct Object;
-struct StringObject;
-struct FunctionObject;
-struct NativeObject;
-struct ClosureObject;
+#include "object_fwd.hpp"
 
 enum ObjectType : uint8_t {
     OBJ_CLOSURE,

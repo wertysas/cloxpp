@@ -48,8 +48,9 @@ struct FunctionScope {
     FunctionScope(FunctionScope* enclosing_, StringObject* name)
         : local_count(0), scope_depth(0), enclosing(enclosing_),
           type(FunctionType::FUNCTION), locals{ } {
-        function = new FunctionObject;
-        function->name = name;
+        name->mark();
+        function = new FunctionObject(name);
+        name->unmark();
         LocalVariable& local = locals[local_count++];
         local.depth = 0;
         local.captured = false;

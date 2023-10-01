@@ -5,18 +5,27 @@
 #ifndef CLOXPP_MARK_SWEEP_COLLECTOR_HPP
 #define CLOXPP_MARK_SWEEP_COLLECTOR_HPP
 
+#include <vector>
 
-struct VirtualMachine;
+class VirtualMachine;
+class Parser;
+class Object;
 
 namespace memory {
 
 class MarkSweepCollector {
-    VirtualMachine* vm_ = nullptr;
-
     public:
-    void init(VirtualMachine* vm) { vm_ = vm; }
+    MarkSweepCollector() : vm_(nullptr), parser_(nullptr) {};
+    void set(VirtualMachine* vm) { vm_ = vm; }
+    void set(Parser* parser) { parser_ = parser; }
     void collect( );
+
+    private :
+    VirtualMachine* vm_ = nullptr;
+    Parser* parser_ = nullptr;
     void mark_roots();
+    void trace_references( );
+    void sweep();
 };
 
 }    // namespace memory

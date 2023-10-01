@@ -3,7 +3,6 @@
 //
 
 #include "cpp_module.hpp"
-#include <iostream>
 #include <ctime>
 
 Value native_clock(uint arg_count, Value* args) {

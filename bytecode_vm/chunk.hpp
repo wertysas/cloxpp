@@ -87,6 +87,9 @@ class Chunk {
         void add_opcode(OpCode opcode, uint line);
         uint add_constant(Value constant, uint line);
         Chunk();
+
+        // mark_value_array
+        void mark_constants();
 };
 
 

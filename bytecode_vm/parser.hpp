@@ -111,6 +111,9 @@ class Parser {
     void emit_loop(uint loop_start);
     void emit_return();
 
+    // GC
+    void mark_compiler_roots();
+
     private:
     uint previous_;
     uint current_;

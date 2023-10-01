@@ -7,7 +7,7 @@
 #include "debug.hpp"
 #include "binary_operators.hpp"
 #include "virtual_machine.hpp"
-#include "function_scope.hpp"
+#include "memory/memory.hpp"
 #include "object.hpp"
 #include "value.hpp"
 
@@ -325,7 +325,9 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_CLOSURE: {
             FunctionObject* function = READ_CONSTANT( ).function( );
-            ClosureObject* closure = new ClosureObject(function);
+            stack_.push(Value(function));
+            auto* closure = new ClosureObject(function);
+            stack_.pop();
             stack_.push(Value(closure));
             // upvalue handling
             for (int i = 0; i < closure->upvalue_count; i++) {
@@ -343,7 +345,9 @@ InterpretResult VirtualMachine::run( ) {
             uint32_t const_idx = constant_long_idx(frame.ip);
             frame.ip += 3;
             FunctionObject* function = chunk->constants[const_idx].function( );
-            ClosureObject* closure = new ClosureObject(function);
+            stack_.push(Value(function));
+            auto* closure = new ClosureObject(function);
+            stack_.pop();
             stack_.push(Value(closure));
             // upvalue handling
             for (int i = 0; i < closure->upvalue_count; i++) {
@@ -515,7 +519,7 @@ void VirtualMachine::define_native_function(const char* name,
 
 void VirtualMachine::mark_globals( ) {
     for (auto& entry: global_table_) {
-        mark_object(entry.key);
+        memory::mark_object(entry.key);
         entry.value.mark( );
     }
 }
@@ -526,15 +530,16 @@ void VirtualMachine::mark_stack( ) {
 }
 void VirtualMachine::mark_call_frames( ) {
     for (uint i = 0; i < frame_count_; i++) {
-        mark_object(frames_[i].closure);
+        memory::mark_object(frames_[i].closure);
     }
 }
 void VirtualMachine::mark_upvalues( ) {
     for (UpValueObject* upvalue = open_upvalues_; upvalue != nullptr;
          upvalue = upvalue->next_upvalue) {
-        mark_object(upvalue);
+        memory::mark_object(upvalue);
     }
 }
+
 
 
 #undef READ_BYTE

@@ -93,7 +93,7 @@ void print_value(Value value) {
 void print_object(Value value) {
     switch (value.object_type( )) {
     case OBJ_STRING:
-        std::cout << value.c_string( );
+        std::cout << "\"" << value.c_string( ) << "\"";
         break;
     case OBJ_FUNCTION: {
         print_function(value.function( ));
@@ -155,7 +155,7 @@ Value::Value(ClosureObject* native_obj) : value_type_(VAL_OBJ), value_( ) {
 }
 void Value::mark( ) const {
     if (is_object( )) {
-        mark_object(object_value( ));
+        memory::mark_object(object_value( ));
     }
 }
 

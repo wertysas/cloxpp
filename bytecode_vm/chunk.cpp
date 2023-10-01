@@ -34,3 +34,10 @@ uint Chunk::add_constant(Value constant, uint line) {
     }
     return idx;
 }
+
+void Chunk::mark_constants( ) {
+    for (uint i=0; i<constants.count(); i++) {
+        constants[i].mark();
+    }
+
+}

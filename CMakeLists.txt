@@ -37,6 +37,7 @@ set(SOURCE_FILES_VM
         bytecode_vm/memory/memory_manager.hpp
         bytecode_vm/memory/allocators.hpp
         bytecode_vm/compiler.hpp
-        bytecode_vm/compiler.cpp)
+        bytecode_vm/compiler.cpp
+        bytecode_vm/object_fwd.hpp)
 
 add_executable(cloxpp ${SOURCE_FILES_VM})

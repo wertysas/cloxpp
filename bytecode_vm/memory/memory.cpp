@@ -6,25 +6,61 @@
 #include "memory.hpp"
 #include "object.hpp"
 
+namespace memory {
+
 // global linked list to keep track of every allocated object
-Object* memory::objects = nullptr;
+Object* objects = nullptr;
 
 // Memory manager;
-memory::MemoryManager<Mallocator> memory::memory_manager{};
+MemoryManager<Mallocator> memory_manager{};
 
+//
+std::stack<Object*> grey_list{};
 
-void* reallocate(void* ptr, size_t old_size, size_t new_size) {
-    if (new_size == 0) {
-        free(ptr);
-        return nullptr;
-    }
-    void* res;
-    res = realloc(ptr, new_size);
-    if (res == nullptr) {
-        exit(1);
-    }
-    return res;
+void mark_object(Object* obj) {
+    if (obj == nullptr || obj->marked) return;
+#ifdef DEBUG_LOG_GC
+    std::cout << obj << " marked object ";
+    print_value(Value(obj));
+    std::cout << std::endl;
+#endif
+    obj->mark();
+    grey_list.push(obj);
 }
+
+void mark_black(Object* obj) {
+#ifdef DEBUG_LOG_GC
+   std::cout << obj << " black-marked object ";
+   print_value(Value(obj));
+   std::cout << std::endl;
+#endif
+    switch (obj->type) {
+    case OBJ_NATIVE:
+    case OBJ_STRING:
+        break;
+    case OBJ_UPVALUE: {
+        auto* upvalue = static_cast<UpValueObject*>(obj);
+        upvalue->closed.mark();
+        break;
+    }
+    case OBJ_FUNCTION: {
+        auto* function = static_cast<FunctionObject*>(obj);
+        mark_object(function->name);
+        function->chunk.mark_constants();
+        break;
+    }
+    case OBJ_CLOSURE:
+        auto* closure = static_cast<ClosureObject*>(obj);
+        mark_object(closure->function);
+        for (uint i=0; i<closure->upvalue_count; i++) {
+            mark_object(closure->upvalues[i]);
+        }
+        break;
+    }
+}
+
+} // end of namespace memory
+
 
 void free_objects( ) {
     Object* object = memory::objects;
@@ -37,6 +73,7 @@ void free_objects( ) {
 
 // TODO: This can be done by specific dtors instead as in FunctionObject
 void free_object(Object* object) {
+
     switch (object->type) {
     case OBJ_STRING: {
         delete static_cast<StringObject*>(object);
@@ -59,3 +96,5 @@ void free_object(Object* object) {
     }
     }
 }
+
+

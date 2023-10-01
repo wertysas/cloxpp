@@ -6,7 +6,6 @@
 #define CLOXPP_OBJECT_HPP
 
 #include "common.hpp"
-#include "memory/memory_manager.hpp"
 #include "memory/memory.hpp"
 #include "chunk.hpp"
 #include <cstring>
@@ -23,15 +22,14 @@ struct Object {
         next = memory::objects;
         memory::objects = this;
     }
+
     inline void mark() { marked = true; }
+    inline void unmark() { marked = false; }
 };
 
 std::ostream& operator<<(std::ostream& os, const ObjectType& type);
 
-inline void mark_object(Object* obj) {
-    if (obj == nullptr) return;
-    obj->mark();
-};
+
 
 // This object owns the memory it's chars member points to
 struct StringObject : public Object {
@@ -76,6 +74,9 @@ struct FunctionObject : public Object {
     FunctionObject( )
         : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), chunk( ),
           name(nullptr) {}
+    explicit FunctionObject(StringObject* name)
+        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), chunk( ),
+          name(name) {}
 
     void* operator new(size_t);
     void operator delete(void* p);
@@ -101,7 +102,7 @@ struct ClosureObject : public Object {
 
     explicit ClosureObject(FunctionObject* fn)
         : Object(OBJ_CLOSURE), function(fn), upvalue_count(fn->upvalue_count) {
-        upvalues = memory::allocate<UpValueObject*>(upvalue_count);
+        upvalues = memory::allocate_array<UpValueObject*>(upvalue_count);
         for (uint i = 0; i < upvalue_count; i++) {
             upvalues[i] = nullptr;
         }
@@ -131,7 +132,7 @@ T* allocate_object( ) {
     // object->next = memory::objects;
     // memory::objects = object;
 #ifdef DEBUG_LOG_GC
-    std::cout << object << " allocate " << size << " for type "
+    std::cout << object << " allocated " << size << " for object type "
               << typeid(T).name( ) << "\n";
 #endif
     return reinterpret_cast<T*>(object);
