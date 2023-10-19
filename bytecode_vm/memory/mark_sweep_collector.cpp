@@ -34,12 +34,21 @@ void MarkSweepCollector::mark_roots( ) {
     vm_->mark_upvalues();
     vm_->mark_globals( );
     parser_->mark_compiler_roots();
+    mark_temporaries();
 }
 void MarkSweepCollector::trace_references( ) {
+#ifdef DEBUG_LOG_GC
+    std::cout << "======== gc tracing begin ==========\n";
+    std::cout << "grey list size: " << grey_list.size() << std::endl;
+#endif
     while (!grey_list.empty()) {
         mark_black(grey_list.top());
         grey_list.pop();
     }
+#ifdef DEBUG_LOG_GC
+    std::cout << "======== gc tracing end ===========\n";
+    std::cout << "grey list size: " << grey_list.size() << std::endl;
+#endif
 }
 void MarkSweepCollector::sweep( ) {
     Object *prev = nullptr, *obj = objects;

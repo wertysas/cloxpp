@@ -66,7 +66,9 @@ HashType hash_string(const char *str, uint length) {
 
 StringObject::StringObject(const char* str_chars, uint str_len) : Object(OBJ_STRING) {
     // string memory allocation
+    marked = true;
     char* cstr = memory::allocate_array<char>(str_len + 1);
+    marked = false;
     memcpy(cstr, str_chars, str_len);
     cstr[str_len] = '\0';
     // members
@@ -88,7 +90,9 @@ void StringObject::operator delete(void* p) {
     memory::free<StringObject>(p);
 }
 void* FunctionObject::operator new(size_t) {
-    return allocate_object<FunctionObject>();
+    Object* obj = allocate_object<FunctionObject>();
+    memory::temporary_roots.push_back(obj);
+    return obj;
 }
 void FunctionObject::operator delete(void* p) {
     memory::free<FunctionObject>(p);

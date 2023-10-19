@@ -1,5 +1,7 @@
 //
 // Created by Johan Ericsson on 2023-08-30.
+// The one thing which one must keep in mind is that
+// allocations in ctor's can trigger gc's for untracked objects
 //
 
 #ifndef CLOXPP_MARK_SWEEP_COLLECTOR_HPP

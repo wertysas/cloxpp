@@ -101,8 +101,11 @@ struct ClosureObject : public Object {
     uint upvalue_count;
 
     explicit ClosureObject(FunctionObject* fn)
-        : Object(OBJ_CLOSURE), function(fn), upvalue_count(fn->upvalue_count) {
-        upvalues = memory::allocate_array<UpValueObject*>(upvalue_count);
+        : Object(OBJ_CLOSURE), function(fn), upvalue_count(0) {
+        memory::temporary_roots.push_back(this);
+        upvalues = memory::allocate_array<UpValueObject*>(fn->upvalue_count);
+        memory::temporary_roots.pop_back();
+        upvalue_count = fn->upvalue_count; // we modify upvalues after allocation due to potential GC trigger
         for (uint i = 0; i < upvalue_count; i++) {
             upvalues[i] = nullptr;
         }

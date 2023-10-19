@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <stack>
+#include <list>
 #include "common.hpp"
 #include "memory_manager.hpp"
 #include "allocators.hpp"
@@ -23,8 +24,9 @@ void free_object(Object* object);
 namespace memory {
 
 extern Object* objects;
-extern MemoryManager<Mallocator> memory_manager;
+extern std::list<Object*> temporary_roots;
 extern std::stack<Object*> grey_list;
+extern MemoryManager<Mallocator> memory_manager;
 
 template<typename T>
 T* allocate_array(size_t count) {
@@ -55,9 +57,9 @@ void free_array(void* ptr, size_t count) {
     memory_manager.deallocate(ptr, sizeof(T) * count);
 }
 
+void mark_temporaries();
 void mark_object(Object* obj);
 void mark_black(Object* obj);
-
 
 }    // end of namespace memory
 

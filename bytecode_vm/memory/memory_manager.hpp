@@ -20,12 +20,19 @@ class MemoryManager : private Allocator {
     size_t allocated_size=0; // bytes
     size_t gc_threshold =1024*1024;
     constexpr int heap_growth_factor() { return 2; }
+    inline void check_size() {
+        if (allocated_size > gc_threshold) {
+            collect();
+        }
+    }
     public:
     void* allocate(size_t size) {
         // TODO: add checks for successful allocation
         allocated_size += size;
 #ifdef DEBUG_STRESS_GC
         collect();
+#else
+        check_size( );
 #endif
         return Allocator::allocate(size);
     }
@@ -37,12 +44,9 @@ class MemoryManager : private Allocator {
         if (new_size > old_size) {
             collect();
         }
+#else
+        check_size();
 #endif
-
-        if (allocated_size > gc_threshold) {
-            collect();
-        }
-
         if (new_size == 0) {
             free(ptr);
             return nullptr;
@@ -67,6 +71,11 @@ class MemoryManager : private Allocator {
     void* allocate_array(size_t type_size, size_t count) {
         size_t size = type_size*count;
         allocated_size += size;
+#ifdef DEBUG_STRESS_GC
+        collect();
+#else
+        check_size();
+#endif
         return Allocator::allocate(size);
     }
     void collect() {

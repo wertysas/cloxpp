@@ -2,7 +2,6 @@
 // Created by Johan Ericsson on 2023-04-03.
 //
 
-#include <cstdlib>
 #include "memory.hpp"
 #include "object.hpp"
 
@@ -10,12 +9,25 @@ namespace memory {
 
 // global linked list to keep track of every allocated object
 Object* objects = nullptr;
-
+// Objects which are being allocated and can get lost if allocation is
+// trigered inside ctors
+std::list<Object*> temporary_roots{};
+// Grey marked work list for GC
+std::stack<Object*> grey_list{};
 // Memory manager;
 MemoryManager<Mallocator> memory_manager{};
 
-//
-std::stack<Object*> grey_list{};
+void mark_temporaries( ) {
+#ifdef DEBUG_LOG_GC
+    std::cout << "mark_temporaries begin---------\n";
+#endif
+    for (auto* obj: temporary_roots) {
+        mark_object(obj);
+    }
+#ifdef DEBUG_LOG_GC
+    std::cout << "mark_temporaries end-----------\n";
+#endif
+}
 
 void mark_object(Object* obj) {
     if (obj == nullptr || obj->marked) return;
