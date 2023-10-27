@@ -102,7 +102,6 @@ class HashTable : public A {    // note, we inherit from allocator for EBCO
     HashTable( ) : count_(0), capacity_(0), entries_(nullptr) { resize_table(); }
     ~HashTable( ) { A::deallocate(entries_, capacity_); }
     void reset(size_t size = HASH_TABLE_DEFAULT_SIZE);
-    void free_storage( );
     void resize_table( );
 
     // iterators
@@ -192,12 +191,6 @@ void HashTable<Key, T, Hash, KeyEqual, A>::reset(size_t size) {
     capacity_ = size;
     entries_ = A::allocate(size);
 }
-
-// template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
-// void HashTable<Key, T, Hash, KeyEqual, A>::free_storage( ) {
-//     memory::free_array<TableEntry>(entries_, capacity_);
-//     reset( );
-// }
 
 template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
 void HashTable<Key, T, Hash, KeyEqual, A>::resize_table( ) {

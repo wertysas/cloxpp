@@ -10,7 +10,7 @@ namespace memory {
 // global linked list to keep track of every allocated object
 Object* objects = nullptr;
 // Objects which are being allocated and can get lost if allocation is
-// trigered inside ctors
+// triggered inside ctors
 std::list<Object*> temporary_roots{};
 // Grey marked work list for GC
 std::stack<Object*> grey_list{};

@@ -52,7 +52,7 @@ class Value {
     Value(const Value& value) = default;
     Value& operator=(const Value& value) = default;
 
-    // GC mark_object setter
+    // GC underlying object marking
     void mark() const;
 
     // ValueType accessors

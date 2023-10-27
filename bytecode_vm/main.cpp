@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
 void run_file(char* file_path, VirtualMachine& VM, Compiler& compiler) {
     std::ifstream fs(file_path);
     if (fs.fail( )) {
-        cout << "Failed top open file: " << file_path << endl;
+        cout << "Failed too open file: " << file_path << endl;
     }
     std::stringstream file_buffer;
     file_buffer << fs.rdbuf();

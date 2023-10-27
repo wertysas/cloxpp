@@ -17,18 +17,16 @@ struct Object {
     ObjectType type;
     Object* next;
     bool marked;
-    explicit Object(ObjectType object_type)
-        : type(object_type), marked(false) {
+    explicit Object(ObjectType object_type) : type(object_type), marked(false) {
         next = memory::objects;
         memory::objects = this;
     }
 
-    inline void mark() { marked = true; }
-    inline void unmark() { marked = false; }
+    inline void mark( ) { marked = true; }
+    inline void unmark( ) { marked = false; }
 };
 
 std::ostream& operator<<(std::ostream& os, const ObjectType& type);
-
 
 
 // This object owns the memory it's chars member points to
@@ -37,7 +35,6 @@ struct StringObject : public Object {
     char* chars;
     uint32_t hash;
 
-    // memory of chars must be allocated and freed
     StringObject(const char* str_chars, uint str_len);
     ~StringObject( );
 
@@ -72,10 +69,15 @@ struct FunctionObject : public Object {
     Chunk chunk;
 
     FunctionObject( )
-        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), name(nullptr), chunk( )
-           {}
+        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), name(nullptr),
+          chunk( ) {
+        memory::temporary_roots.pop_back( );
+    }
     explicit FunctionObject(StringObject* name)
-        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), name(name), chunk( ) {}
+        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), name(name),
+          chunk( ) {
+        memory::temporary_roots.pop_back( );
+    }
 
 
     void* operator new(size_t);
@@ -104,8 +106,10 @@ struct ClosureObject : public Object {
         : Object(OBJ_CLOSURE), function(fn), upvalue_count(0) {
         memory::temporary_roots.push_back(this);
         upvalues = memory::allocate_array<UpValueObject*>(fn->upvalue_count);
-        memory::temporary_roots.pop_back();
-        upvalue_count = fn->upvalue_count; // we modify upvalues after allocation due to potential GC trigger
+        memory::temporary_roots.pop_back( );
+        upvalue_count =
+            fn->upvalue_count;    // we modify upvalues after allocation due to
+                                  // potential GC trigger
         for (uint i = 0; i < upvalue_count; i++) {
             upvalues[i] = nullptr;
         }
@@ -131,9 +135,6 @@ T* allocate_object( ) {
     size_t size = sizeof(T);
     Object* object =
         reinterpret_cast<Object*>(memory::memory_manager.allocate(size));
-
-    // object->next = memory::objects;
-    // memory::objects = object;
 #ifdef DEBUG_LOG_GC
     std::cout << object << " allocated " << size << " for object type "
               << typeid(T).name( ) << "\n";

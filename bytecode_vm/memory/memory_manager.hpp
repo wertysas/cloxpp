@@ -27,7 +27,6 @@ class MemoryManager : private Allocator {
     }
     public:
     void* allocate(size_t size) {
-        // TODO: add checks for successful allocation
         allocated_size += size;
 #ifdef DEBUG_STRESS_GC
         collect();

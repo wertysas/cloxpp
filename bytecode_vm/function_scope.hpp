@@ -38,7 +38,6 @@ struct FunctionScope {
         : local_count(0), scope_depth(0), enclosing(nullptr),
           type(FunctionType::SCRIPT), locals{ } {
         function = new FunctionObject;
-        memory::temporary_roots .pop_back();
         LocalVariable& local = locals[local_count++];
         local.depth = 0;
         local.captured = false;
@@ -52,7 +51,6 @@ struct FunctionScope {
         memory::temporary_roots.push_back(name);
         function = new FunctionObject(name);
         memory::temporary_roots.pop_back();
-        memory::temporary_roots.pop_back(); // push_back called in operator new for FunctionObject
         LocalVariable& local = locals[local_count++];
         local.depth = 0;
         local.captured = false;
