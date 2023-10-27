@@ -93,17 +93,22 @@ void print_value(Value value) {
 void print_object(Value value) {
     switch (value.object_type( )) {
     case OBJ_STRING:
+        if (value.c_string() == nullptr) {
+            std::cout << "uninitialied string (nullptr chars)";
+            break;
+        }
+        //std::cout << "\"" << value.c_string( ) << "\"";
         std::cout << value.c_string( );
         break;
     case OBJ_FUNCTION: {
-        print_function(value.function());
+        print_function(value.function( ));
         break;
     }
     case OBJ_NATIVE:
         std::cout << "<native fn>";
         break;
     case OBJ_CLOSURE:
-        print_function(value.closure()->function);
+        print_function(value.closure( )->function);
         break;
     case OBJ_UPVALUE:
         std::cout << "upvalue";
@@ -152,6 +157,11 @@ Value::Value(NativeObject* native_obj) : value_type_(VAL_OBJ), value_( ) {
 }
 Value::Value(ClosureObject* native_obj) : value_type_(VAL_OBJ), value_( ) {
     value_.obj = static_cast<Object*>(native_obj);
+}
+void Value::mark( ) const {
+    if (is_object( )) {
+        memory::mark_object(object_value( ));
+    }
 }
 
 

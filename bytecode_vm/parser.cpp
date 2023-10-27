@@ -101,7 +101,7 @@ void Parser::number(bool assignable) {
 }
 
 void Parser::string(bool assignable) {
-    Value val{str_from_chars(previous( ).start + 1, previous( ).length - 2)};
+    Value val{new StringObject(previous( ).start + 1, previous( ).length - 2)};
     chunk( ).add_constant(val, previous( ).line);
 }
 
@@ -294,7 +294,7 @@ void Parser::function_declaration( ) {
 }
 
 void Parser::function( ) {
-    StringObject* name = str_from_chars(previous( ).start, previous( ).length);
+    StringObject* name = new StringObject(previous( ).start, previous( ).length);
     FunctionScope function_scope(scope_, name);
     update_scope(&function_scope);
     begin_scope( );    // no end_scope() since scope lifetime only is inside
@@ -317,7 +317,9 @@ void Parser::function( ) {
     block( );
 
     FunctionObject* function = close_function_scope( );
+    memory::temporary_roots.push_back(function);
     uint idx = emit_constant(Value(function));
+    memory::temporary_roots.pop_back();
     emit_byte_with_index(OP_CLOSURE, OP_CLOSURE_LONG, idx);
 
     for (uint i = 0; i < function->upvalue_count; i++) {
@@ -504,9 +506,10 @@ void Parser::synchronize( ) {
         }
     }
 }
+
 uint Parser::identifier_constant(const Token& token) {
-    return chunk( ).constants.idx_append(
-        Value(str_from_chars(token.start, token.length)));
+    return chunk( ).add_constant(
+        Value(new StringObject(token.start, token.length)));
 }
 void Parser::define_variable(uint idx) {
     if (scope_->scope_depth > 0) {
@@ -731,4 +734,12 @@ void Parser::emit_loop(uint loop_start) {
 void Parser::emit_return( ) {
     emit_byte(OP_NIL);
     emit_byte(OP_RETURN);
+}
+
+void Parser::mark_compiler_roots( ) {
+    auto* scope = scope_;
+    while (scope != nullptr) {
+        memory::mark_object(scope->function);
+        scope = scope->enclosing;
+    }
 }

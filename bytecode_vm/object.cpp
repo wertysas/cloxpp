@@ -5,13 +5,30 @@
 #include <cstring>
 #include "object.hpp"
 
-StringObject* str_from_chars(const char *chars, uint length) {
-    char* cstr = memory::allocate<char>(length + 1);
-    memcpy(cstr, chars, length);
-    cstr[length] = '\0';
-    HashType hash = hash_string(cstr, length);
-    return allocate_string(cstr, length, hash);
+std::ostream&  operator<<(std::ostream& os, const ObjectType& type) {
+    switch (type) {
+    case OBJ_CLOSURE:
+        os << "OBJ_CLOSURE";
+        break;
+    case OBJ_UPVALUE:
+        os << "OBJ_UPVALUE";
+        break;
+    case OBJ_FUNCTION:
+        os << "OBJ_FUNCTION";
+        break;
+    case OBJ_NATIVE:
+        os << "OBJ_NATIVE";
+        break;
+    case OBJ_STRING:
+        os << "OBJ_STRING";
+        break;
+    default:
+        os << " error (no type defined)";
+        break;
+    }
+    return os;
 }
+
 
 StringObject* allocate_string(char *chars, uint length, HashType hash) {
     auto* string = allocate_object<StringObject>();
@@ -22,9 +39,10 @@ StringObject* allocate_string(char *chars, uint length, HashType hash) {
     return string;
 }
 
+// TODO: It's possible this can be cleaned with a new ctor of strobj
 StringObject* concatenate(StringObject *str1, StringObject *str2) {
     size_t length = str1->length + str2->length;
-    char* chars = memory::allocate<char>(length+1);
+    char* chars = memory::allocate_array<char>(length + 1);
     memcpy(chars, str1->chars, str1->length);
     memcpy(chars+str1->length, str2->chars, str2->length);
     chars[length]='\0';
@@ -46,10 +64,38 @@ HashType hash_string(const char *str, uint length) {
     return hash;
 }
 
+StringObject::StringObject(const char* str_chars, uint str_len) : Object(OBJ_STRING), chars(nullptr) {
+    // string memory allocation
+    memory::temporary_roots.push_back(this);
+    char* cstr = memory::allocate_array<char>(str_len + 1);
+    memory::temporary_roots.pop_back();
+    memcpy(cstr, str_chars, str_len);
+    cstr[str_len] = '\0';
+    // members
+    length = str_len;
+    chars = cstr;
+    hash  = hash_string(cstr, str_len);
+
+}
+
+StringObject::~StringObject( ) {
+    memory::free_array<char>(chars, length+1);
+}
+
 // TODO: WRITE ONE GENERIC IMPLEMENTATION FOR ALL CLASSES DERIVED FROM OBJECT
-// (IF POSSIBLE)
+void* StringObject::operator new(size_t) {
+    return allocate_object<StringObject>();
+}
+void StringObject::operator delete(void* p) {
+    memory::free<StringObject>(p);
+}
 void* FunctionObject::operator new(size_t) {
-    return allocate_object<FunctionObject>();
+    // this is ugly, but this can't be done in the ctor
+    // as the chunk member will trigger an allocation that
+    // could possibly trigger a GC cycle
+    Object* obj = allocate_object<FunctionObject>();
+    memory::temporary_roots.push_back(obj);
+    return obj;
 }
 void FunctionObject::operator delete(void* p) {
     memory::free<FunctionObject>(p);

@@ -3,7 +3,7 @@
 //
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include "doctest.h"
+#include "../doctest.h"
 #include "hash_table.hpp"
 #include <cstdlib>    //size_t, malloc, free
 #include <new>        // bad_alloc, bad_array_new_length

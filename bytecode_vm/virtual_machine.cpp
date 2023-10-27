@@ -7,7 +7,7 @@
 #include "debug.hpp"
 #include "binary_operators.hpp"
 #include "virtual_machine.hpp"
-#include "compiler.hpp"
+#include "memory/memory.hpp"
 #include "object.hpp"
 #include "value.hpp"
 
@@ -19,8 +19,7 @@
 //  Should accessor of chunk_ be changed to chunk() function in Parser?
 
 
-InterpretResult VirtualMachine::interpret(const string& source) {
-    FunctionObject* function = compile(source);
+InterpretResult VirtualMachine::interpret(FunctionObject* function) {
     if (function == nullptr) {
         return INTERPRET_COMPILE_ERROR;
     }
@@ -326,7 +325,9 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_CLOSURE: {
             FunctionObject* function = READ_CONSTANT( ).function( );
-            ClosureObject* closure = new ClosureObject(function);
+            stack_.push(Value(function));
+            auto* closure = new ClosureObject(function);
+            stack_.pop();
             stack_.push(Value(closure));
             // upvalue handling
             for (int i = 0; i < closure->upvalue_count; i++) {
@@ -344,14 +345,16 @@ InterpretResult VirtualMachine::run( ) {
             uint32_t const_idx = constant_long_idx(frame.ip);
             frame.ip += 3;
             FunctionObject* function = chunk->constants[const_idx].function( );
-            ClosureObject* closure = new ClosureObject(function);
+            stack_.push(Value(function));
+            auto* closure = new ClosureObject(function);
+            stack_.pop();
             stack_.push(Value(closure));
             // upvalue handling
             for (int i = 0; i < closure->upvalue_count; i++) {
                 uint8_t is_local = constant_long_idx(frame.ip);
-                frame.ip+=3;
+                frame.ip += 3;
                 uint8_t idx = constant_long_idx(frame.ip);
-                frame.ip+=3;
+                frame.ip += 3;
                 if (is_local) {
                     closure->upvalues[i] = capture_upvalue(frame.slots + idx);
                 } else {
@@ -385,7 +388,7 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_CLOSE_UPVALUE: {
             close_upvalues(stack_.top( ) - 1);
-            stack_.pop();
+            stack_.pop( );
             break;
         }
         case OP_RETURN: {
@@ -430,7 +433,7 @@ bool VirtualMachine::call_value(Value callee, uint arg_count) {
 }
 
 UpValueObject* VirtualMachine::capture_upvalue(Value* local_value) {
-    UpValueObject *prev= nullptr, *new_upvalue, *upvalue=open_upvalues_;
+    UpValueObject *prev = nullptr, *new_upvalue, *upvalue = open_upvalues_;
     while (upvalue != nullptr && upvalue->location > local_value) {
         prev = upvalue;
         upvalue = prev->next_upvalue;
@@ -503,14 +506,40 @@ void VirtualMachine::runtime_error(const char* fmt, ...) {
     }
     stack_.reset( );
 }
+
 void VirtualMachine::define_native_function(const char* name,
                                             NativeFunction native_function) {
-    stack_.push(Value(str_from_chars(name, static_cast<uint>(strlen(name)))));
+    stack_.push(Value(new StringObject(name, static_cast<uint>(strlen(name)))));
     stack_.push(Value(new NativeObject(native_function)));
     global_table_.insert(stack_.peek(1).string( ), stack_.peek(0));
     stack_.pop( );
     stack_.pop( );
 }
+
+
+void VirtualMachine::mark_globals( ) {
+    for (auto& entry: global_table_) {
+        memory::mark_object(entry.key);
+        entry.value.mark( );
+    }
+}
+void VirtualMachine::mark_stack( ) {
+    for (Value* value = stack_.first( ); value < stack_.top( ); value++) {
+        value->mark( );
+    }
+}
+void VirtualMachine::mark_call_frames( ) {
+    for (uint i = 0; i < frame_count_; i++) {
+        memory::mark_object(frames_[i].closure);
+    }
+}
+void VirtualMachine::mark_upvalues( ) {
+    for (UpValueObject* upvalue = open_upvalues_; upvalue != nullptr;
+         upvalue = upvalue->next_upvalue) {
+        memory::mark_object(upvalue);
+    }
+}
+
 
 
 #undef READ_BYTE

@@ -6,7 +6,7 @@
 #define CLOXPP_OBJECT_HPP
 
 #include "common.hpp"
-#include "memory.hpp"
+#include "memory/memory.hpp"
 #include "chunk.hpp"
 #include <cstring>
 
@@ -15,13 +15,33 @@ using HashType = uint32_t;
 
 struct Object {
     ObjectType type;
-    Object* next = nullptr;
+    Object* next;
+    bool marked;
+    explicit Object(ObjectType object_type) : type(object_type), marked(false) {
+        next = memory::objects;
+        memory::objects = this;
+    }
+
+    inline void mark( ) { marked = true; }
+    inline void unmark( ) { marked = false; }
 };
 
+std::ostream& operator<<(std::ostream& os, const ObjectType& type);
+
+
+// This object owns the memory it's chars member points to
 struct StringObject : public Object {
     size_t length;
     char* chars;
-    uint32_t hash;    // implement through mixin/CRTP?
+    uint32_t hash;
+
+    StringObject(const char* str_chars, uint str_len);
+    ~StringObject( );
+
+    StringObject& operator=(StringObject&& string_object) noexcept;
+
+    void* operator new(size_t);
+    void operator delete(void* p);
 };
 
 struct StringHash {
@@ -45,12 +65,20 @@ HashType hash_string(const char* str, uint length);
 struct FunctionObject : public Object {
     uint arity;
     uint16_t upvalue_count;
-    Chunk chunk;
     StringObject* name;
+    Chunk chunk;
 
-    FunctionObject( ) : arity(0), upvalue_count(0), chunk( ), name(nullptr) {
-        type = OBJ_FUNCTION;
+    FunctionObject( )
+        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), name(nullptr),
+          chunk( ) {
+        memory::temporary_roots.pop_back( );
     }
+    explicit FunctionObject(StringObject* name)
+        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), name(name),
+          chunk( ) {
+        memory::temporary_roots.pop_back( );
+    }
+
 
     void* operator new(size_t);
     void operator delete(void* p);
@@ -62,8 +90,7 @@ struct UpValueObject : public Object {
     UpValueObject* next_upvalue;
 
     explicit UpValueObject(Value* loc)
-        : location(loc), closed( ), next_upvalue(nullptr) {
-        type = OBJ_UPVALUE;
+        : Object(OBJ_UPVALUE), location(loc), closed( ), next_upvalue(nullptr) {
     }
 
     void* operator new(size_t);
@@ -76,10 +103,14 @@ struct ClosureObject : public Object {
     uint upvalue_count;
 
     explicit ClosureObject(FunctionObject* fn)
-        : function(fn), upvalue_count(fn->upvalue_count) {
-        type = OBJ_CLOSURE;
-        upvalues = memory::allocate<UpValueObject*>(upvalue_count);
-        for (int i = 0; i < upvalue_count; i++) {
+        : Object(OBJ_CLOSURE), function(fn), upvalue_count(0) {
+        memory::temporary_roots.push_back(this);
+        upvalues = memory::allocate_array<UpValueObject*>(fn->upvalue_count);
+        memory::temporary_roots.pop_back( );
+        upvalue_count =
+            fn->upvalue_count;    // we modify upvalues after allocation due to
+                                  // potential GC trigger
+        for (uint i = 0; i < upvalue_count; i++) {
             upvalues[i] = nullptr;
         }
     }
@@ -92,22 +123,22 @@ struct ClosureObject : public Object {
 typedef Value (*NativeFunction)(uint arg_count, Value* args);
 struct NativeObject : public Object {
     NativeFunction function;
-    explicit NativeObject(NativeFunction fn) : function(fn) {
-        type = OBJ_NATIVE;
-    }
+    explicit NativeObject(NativeFunction fn)
+        : Object(OBJ_NATIVE), function(fn) {}
     void* operator new(size_t);
     void operator delete(void* p);
 };
 
+
 template<typename T>
 T* allocate_object( ) {
     size_t size = sizeof(T);
-    Object* object = reinterpret_cast<Object*>(reallocate(nullptr, 0, size));
-
-    // Updating object list used to keep track of objects allocated
-    object->next = memory::objects;
-    memory::objects = object;
-
+    Object* object =
+        reinterpret_cast<Object*>(memory::memory_manager.allocate(size));
+#ifdef DEBUG_LOG_GC
+    std::cout << object << " allocated " << size << " for object type "
+              << typeid(T).name( ) << "\n";
+#endif
     return reinterpret_cast<T*>(object);
 }
 
