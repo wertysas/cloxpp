@@ -61,12 +61,17 @@ void mark_black(Object* obj) {
         function->chunk.mark_constants();
         break;
     }
-    case OBJ_CLOSURE:
+    case OBJ_CLOSURE: {
         auto* closure = static_cast<ClosureObject*>(obj);
         mark_object(closure->function);
-        for (uint i=0; i<closure->upvalue_count; i++) {
+        for (uint i = 0; i < closure->upvalue_count; i++) {
             mark_object(closure->upvalues[i]);
         }
+        break;
+    }
+    case OBJ_CLASS:
+        auto* class_obj = static_cast<ClassObject*>(obj);
+        mark_object(class_obj->name);
         break;
     }
 }
@@ -105,7 +110,11 @@ void free_object(Object* object) {
     }
     case OBJ_UPVALUE: {
         delete static_cast<UpValueObject*>(object);
+        break;
     }
+    case OBJ_CLASS:
+        delete static_cast<ClassObject*>(object);
+        break;
     }
 }
 

@@ -327,7 +327,7 @@ InterpretResult VirtualMachine::run( ) {
             FunctionObject* function = READ_CONSTANT( ).function( );
             stack_.push(Value(function));
             auto* closure = new ClosureObject(function);
-            stack_.pop();
+            stack_.pop( );
             stack_.push(Value(closure));
             // upvalue handling
             for (int i = 0; i < closure->upvalue_count; i++) {
@@ -347,7 +347,7 @@ InterpretResult VirtualMachine::run( ) {
             FunctionObject* function = chunk->constants[const_idx].function( );
             stack_.push(Value(function));
             auto* closure = new ClosureObject(function);
-            stack_.pop();
+            stack_.pop( );
             stack_.push(Value(closure));
             // upvalue handling
             for (int i = 0; i < closure->upvalue_count; i++) {
@@ -389,6 +389,18 @@ InterpretResult VirtualMachine::run( ) {
         case OP_CLOSE_UPVALUE: {
             close_upvalues(stack_.top( ) - 1);
             stack_.pop( );
+            break;
+        }
+        case OP_CLASS: {
+            StringObject* name = READ_CONSTANT( ).string( );
+            stack_.push(Value(new ClassObject(name)));
+            break;
+        }
+        case OP_CLASS_LONG: {
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            StringObject* name = chunk->constants[const_idx].string( );
+            stack_.push(Value(new ClassObject(name)));
             break;
         }
         case OP_RETURN: {
@@ -539,7 +551,6 @@ void VirtualMachine::mark_upvalues( ) {
         memory::mark_object(upvalue);
     }
 }
-
 
 
 #undef READ_BYTE

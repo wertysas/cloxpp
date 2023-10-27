@@ -122,6 +122,12 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_CLOSE_UPVALUE: {
         return simple_instruction("OP_CLOSE_UPVALUE", offset);
     }
+    case OP_CLASS: {
+        return constant_instruction("OP_CLASS", chunk, offset);
+    }
+    case OP_CLASS_LONG: {
+        return constant_instruction("OP_CLASS_LONG", chunk, offset);
+    }
     case OP_RETURN:
         return simple_instruction("OP_RETURN", offset);
     default:

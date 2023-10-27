@@ -100,10 +100,9 @@ void print_object(Value value) {
         //std::cout << "\"" << value.c_string( ) << "\"";
         std::cout << value.c_string( );
         break;
-    case OBJ_FUNCTION: {
+    case OBJ_FUNCTION:
         print_function(value.function( ));
         break;
-    }
     case OBJ_NATIVE:
         std::cout << "<native fn>";
         break;
@@ -112,6 +111,9 @@ void print_object(Value value) {
         break;
     case OBJ_UPVALUE:
         std::cout << "upvalue";
+    case OBJ_CLASS:
+        std::cout << value.class_obj()->name->chars;
+        break;
     }
 }
 
@@ -143,6 +145,9 @@ NativeFunction Value::native_function( ) const {
 ClosureObject* Value::closure( ) const {
     return static_cast<ClosureObject*>(value_.obj);
 }
+ClassObject* Value::class_obj( ) const {
+    return static_cast<ClassObject*>(value_.obj);
+}
 
 // FIXME: Cant this be cleaned up by using concept + template -> 1 constructor
 // instead of 4 even though class is not template?
@@ -158,6 +163,10 @@ Value::Value(NativeObject* native_obj) : value_type_(VAL_OBJ), value_( ) {
 Value::Value(ClosureObject* native_obj) : value_type_(VAL_OBJ), value_( ) {
     value_.obj = static_cast<Object*>(native_obj);
 }
+Value::Value(ClassObject* class_object) : value_type_(VAL_OBJ), value_() {
+    value_.obj = class_object;
+}
+
 void Value::mark( ) const {
     if (is_object( )) {
         memory::mark_object(object_value( ));

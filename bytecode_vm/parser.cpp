@@ -275,7 +275,9 @@ inline bool Parser::check(TokenType type) {
     return current( ).type == type;
 }
 void Parser::declaration( ) {
-    if (match(TOKEN_FUN)) {
+    if (match(TOKEN_CLASS)) {
+        class_declaration( );
+    } else if (match(TOKEN_FUN)) {
         function_declaration( );
     } else if (match(TOKEN_VAR)) {
         var_declaration( );
@@ -286,6 +288,17 @@ void Parser::declaration( ) {
         synchronize( );
 }
 
+void Parser::class_declaration( ) {
+    consume(TOKEN_IDENTIFIER, "Expect class name.");
+    uint idx = identifier_constant(previous());
+    declare_variable();
+
+    emit_byte_with_index(OP_CLASS, OP_CLASS_LONG, idx);
+    define_variable(idx);
+
+    consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+    consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+}
 void Parser::function_declaration( ) {
     uint8_t global = parse_variable("Expect function name.");
     scope_->mark_initialized( );

@@ -10,5 +10,6 @@ struct StringObject;
 struct FunctionObject;
 struct NativeObject;
 struct ClosureObject;
+struct ClassObject;
 
 #endif    // CLOXPP_OBJECT_FWD_HPP

@@ -10,6 +10,7 @@
 #include "object_fwd.hpp"
 
 enum ObjectType : uint8_t {
+    OBJ_CLASS,
     OBJ_CLOSURE,
     OBJ_UPVALUE,
     OBJ_FUNCTION,
@@ -45,7 +46,7 @@ class Value {
     Value(FunctionObject* function_obj);
     Value(NativeObject* native_obj);
     Value(ClosureObject* closure_object);
-
+    Value(ClassObject* class_object);
     // Copy CTOR and assignment operator, these are essentially std::memmoves
     // for more info see:
     // https://en.cppreference.com/w/cpp/language/copy_constructor
@@ -66,6 +67,7 @@ class Value {
     FunctionObject* function( ) const;
     NativeFunction native_function( ) const;
     ClosureObject* closure( ) const;
+    ClassObject* class_obj() const;
 
     // Value type_ checks
     inline ValueType value_type( ) const { return value_type_; }
@@ -80,6 +82,7 @@ class Value {
     inline bool is_function( ) const { return is_object_type(OBJ_FUNCTION); }
     inline bool is_native( ) const { return is_object_type(OBJ_NATIVE); }
     inline bool is_closure( ) const { return is_object_type(OBJ_CLOSURE); }
+    inline bool is_class( ) const  { return is_object_type(OBJ_CLASS); }
     // String functions
     inline char* c_string( ) const;
 

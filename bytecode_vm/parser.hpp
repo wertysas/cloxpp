@@ -76,6 +76,7 @@ class Parser {
     void expression( );
     void parse_precedence(Precedence precedence);
     void declaration( );
+    void class_declaration( );
     void function_declaration( );
     void function();
     uint8_t argument_list();

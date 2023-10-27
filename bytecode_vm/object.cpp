@@ -118,3 +118,9 @@ void* UpValueObject::operator new(size_t) {
 void UpValueObject::operator delete(void* p) {
     memory::free<UpValueObject>(p);
 }
+void* ClassObject::operator new(size_t) {
+    return allocate_object<ClassObject>();
+}
+void ClassObject::operator delete(void* p) {
+    memory::free<ClassObject>(p);
+}
