@@ -12,8 +12,7 @@ The specification of Lox can be found in [chapter 3](https://craftinginterpreter
 -  . . .
 
 ## Implementation status 
-Currently the VM supports all but two features of lox:
-- No Garbage Collector (work in progess, currently benchmarking different allocator models and how they affect the GC).
+Currently the VM supports all but one feature of lox:
 - No user defined classes.
 
 CloxPP  passes all unit tests from [munificient/craftinginterpreters](https://github.com/munificent/craftinginterpreters#testing)
