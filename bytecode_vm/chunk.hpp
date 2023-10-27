@@ -86,8 +86,9 @@ class Chunk {
     static Value* tmp_value; // GC tmp for tracking values before resizing
 
     public:
-        DynamicArray<OpCode> opcodes;
+        // constants must be first, initialization order is important for GC
         DynamicArray<Value> constants;
+        DynamicArray<OpCode> opcodes;
         DynamicArray<LineInfo> line_numbers;
         void add_opcode(OpCode opcode, uint line);
         uint add_constant(Value constant);

@@ -4,7 +4,7 @@
 
 #include "chunk.hpp"
 
-Chunk::Chunk() : opcodes(), constants(), line_numbers() {
+Chunk::Chunk() : constants(), opcodes(), line_numbers() {
 }
 
 Value* Chunk::tmp_value = nullptr;
