@@ -317,7 +317,9 @@ void Parser::function( ) {
     block( );
 
     FunctionObject* function = close_function_scope( );
+    memory::temporary_roots.push_back(function);
     uint idx = emit_constant(Value(function));
+    memory::temporary_roots.pop_back();
     emit_byte_with_index(OP_CLOSURE, OP_CLOSURE_LONG, idx);
 
     for (uint i = 0; i < function->upvalue_count; i++) {
@@ -504,8 +506,9 @@ void Parser::synchronize( ) {
         }
     }
 }
+
 uint Parser::identifier_constant(const Token& token) {
-    return chunk( ).constants.idx_append(
+    return chunk( ).add_constant(
         Value(new StringObject(token.start, token.length)));
 }
 void Parser::define_variable(uint idx) {

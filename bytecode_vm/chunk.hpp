@@ -69,6 +69,7 @@ enum OpCode : uint8_t {
     OP_RETURN,
 };
 
+
 // Struct holding lineinfo for a line including start and end
 // offset of instructions in chunk if start=end, then empty
 struct LineInfo {
@@ -79,15 +80,19 @@ struct LineInfo {
     LineInfo(uint line_, uint start_) : line(line_), start(start_), end(start_) {};
 };
 
+
 class Chunk {
+    private:
+    static Value* tmp_value; // GC tmp for tracking values before resizing
+
     public:
         DynamicArray<OpCode> opcodes;
         DynamicArray<Value> constants;
         DynamicArray<LineInfo> line_numbers;
         void add_opcode(OpCode opcode, uint line);
+        uint add_constant(Value constant);
         uint add_constant(Value constant, uint line);
         Chunk();
-
         // mark_value_array
         void mark_constants();
 };

@@ -22,7 +22,6 @@ FunctionObject* Compiler::compile(const string& source) {
 #endif
         Parser parser(tokens, &main_scope, error_reporter);
         memory::memory_manager.set(&parser);
-        std::cout << "parser set" << std::endl;
         FunctionObject* function = parser.parse_tokens();
 
         return parser.had_error() ? nullptr : function;

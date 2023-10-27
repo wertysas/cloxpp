@@ -42,8 +42,9 @@ void MarkSweepCollector::trace_references( ) {
     std::cout << "grey list size: " << grey_list.size() << std::endl;
 #endif
     while (!grey_list.empty()) {
-        mark_black(grey_list.top());
+        Object* obj = grey_list.top();
         grey_list.pop();
+        mark_black(obj);
     }
 #ifdef DEBUG_LOG_GC
     std::cout << "======== gc tracing end ===========\n";

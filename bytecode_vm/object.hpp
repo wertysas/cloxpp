@@ -68,15 +68,15 @@ HashType hash_string(const char* str, uint length);
 struct FunctionObject : public Object {
     uint arity;
     uint16_t upvalue_count;
-    Chunk chunk;
     StringObject* name;
+    Chunk chunk;
 
     FunctionObject( )
-        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), chunk( ),
-          name(nullptr) {}
+        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), name(nullptr), chunk( )
+           {}
     explicit FunctionObject(StringObject* name)
-        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), chunk( ),
-          name(name) {}
+        : Object(OBJ_FUNCTION), arity(0), upvalue_count(0), name(name), chunk( ) {}
+
 
     void* operator new(size_t);
     void operator delete(void* p);

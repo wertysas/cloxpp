@@ -64,11 +64,11 @@ HashType hash_string(const char *str, uint length) {
     return hash;
 }
 
-StringObject::StringObject(const char* str_chars, uint str_len) : Object(OBJ_STRING) {
+StringObject::StringObject(const char* str_chars, uint str_len) : Object(OBJ_STRING), chars(nullptr) {
     // string memory allocation
-    marked = true;
+    memory::temporary_roots.push_back(this);
     char* cstr = memory::allocate_array<char>(str_len + 1);
-    marked = false;
+    memory::temporary_roots.pop_back();
     memcpy(cstr, str_chars, str_len);
     cstr[str_len] = '\0';
     // members
@@ -90,6 +90,9 @@ void StringObject::operator delete(void* p) {
     memory::free<StringObject>(p);
 }
 void* FunctionObject::operator new(size_t) {
+    // this is ugly, but this can't be done in the ctor
+    // as the chunk member will trigger an allocation that
+    // could possibly trigger a GC cycle
     Object* obj = allocate_object<FunctionObject>();
     memory::temporary_roots.push_back(obj);
     return obj;
