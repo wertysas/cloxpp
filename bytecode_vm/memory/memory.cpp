@@ -69,10 +69,17 @@ void mark_black(Object* obj) {
         }
         break;
     }
-    case OBJ_CLASS:
+    case OBJ_CLASS: {
         auto* class_obj = static_cast<ClassObject*>(obj);
         mark_object(class_obj->name);
         break;
+    }
+    case OBJ_INSTANCE: {
+        auto* instance = static_cast<InstanceObject*>(obj);
+        mark_object(instance);
+        mark_table(instance->fields);
+        break;
+    }
     }
 }
 

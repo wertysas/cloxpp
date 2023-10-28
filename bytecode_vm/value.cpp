@@ -114,6 +114,9 @@ void print_object(Value value) {
     case OBJ_CLASS:
         std::cout << value.class_obj()->name->chars;
         break;
+    case OBJ_INSTANCE:
+        std::cout << value.instance()->klass->name->chars << " instance";
+        break;
     }
 }
 
@@ -148,6 +151,9 @@ ClosureObject* Value::closure( ) const {
 ClassObject* Value::class_obj( ) const {
     return static_cast<ClassObject*>(value_.obj);
 }
+InstanceObject* Value::instance( ) const {
+    return static_cast<InstanceObject*>(value_.obj);
+}
 
 // FIXME: Cant this be cleaned up by using concept + template -> 1 constructor
 // instead of 4 even though class is not template?
@@ -165,6 +171,9 @@ Value::Value(ClosureObject* native_obj) : value_type_(VAL_OBJ), value_( ) {
 }
 Value::Value(ClassObject* class_object) : value_type_(VAL_OBJ), value_() {
     value_.obj = class_object;
+}
+Value::Value(InstanceObject* instance) : value_type_(VAL_OBJ), value_() {
+    value_.obj = instance;
 }
 
 void Value::mark( ) const {

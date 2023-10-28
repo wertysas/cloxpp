@@ -431,6 +431,11 @@ bool VirtualMachine::call_value(Value callee, uint arg_count) {
     case OBJ_CLOSURE: {
         return call(callee.closure( ), arg_count);
     }
+    case OBJ_CLASS: {
+        ClassObject* klass = callee.class_obj( );
+        *(stack_.top()-arg_count-1) = Value( new InstanceObject(klass));
+        return true;
+    }
     case OBJ_NATIVE: {
         NativeFunction native_function = callee.native_function( );
         Value result = native_function(arg_count, stack_.top( ) - arg_count);

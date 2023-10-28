@@ -124,3 +124,9 @@ void* ClassObject::operator new(size_t) {
 void ClassObject::operator delete(void* p) {
     memory::free<ClassObject>(p);
 }
+void* InstanceObject::operator new(size_t) {
+    return allocate_object<InstanceObject>();
+}
+void InstanceObject::operator delete(void* p) {
+    memory::free<InstanceObject>(p);
+}
