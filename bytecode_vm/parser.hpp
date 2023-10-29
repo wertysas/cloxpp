@@ -66,6 +66,7 @@ class Parser {
     void string(bool assignable);
     void grouping(bool assignable);
     void call(bool assignable);
+    void dot(bool assignable);
     void variable(bool assignable);
     void literal(bool assignable);
     void unary(bool assignable);

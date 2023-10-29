@@ -19,7 +19,7 @@ Parser::Parser(const std::vector<Token>& tokens,
     parse_rules[TOKEN_LEFT_BRACE] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_RIGHT_BRACE] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_COMMA] = {nullptr, nullptr, PREC_NONE};
-    parse_rules[TOKEN_DOT] = {nullptr, nullptr, PREC_NONE};
+    parse_rules[TOKEN_DOT] = {nullptr, &Parser::dot, PREC_CALL};
     parse_rules[TOKEN_MINUS] = {&Parser::unary, &Parser::binary, PREC_TERM};
     parse_rules[TOKEN_PLUS] = {nullptr, &Parser::binary, PREC_TERM};
     parse_rules[TOKEN_SEMICOLON] = {nullptr, nullptr, PREC_NONE};
@@ -114,6 +114,18 @@ void Parser::call(bool assignable) {
     uint8_t arg_count = argument_list( );
     emit_byte(OP_CALL);
     emit_byte(static_cast<OpCode>(arg_count));
+}
+
+void Parser::dot(bool assignable) {
+    consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
+    uint name_idx = identifier_constant(previous());
+
+    if (assignable && match(TOKEN_EQUAL)) {
+        expression();
+        emit_byte_with_index(OP_SET_PROPERTY, OP_SET_PROPERTY_LONG, name_idx);
+    } else {
+        emit_byte_with_index(OP_GET_PROPERTY, OP_GET_PROPERTY_LONG, name_idx);
+    }
 }
 
 void Parser::literal(bool assignable) {

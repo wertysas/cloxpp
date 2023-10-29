@@ -67,10 +67,12 @@ template<typename Key,
     typename Hash = std::hash<Key>,
     typename KeyEqual = std::equal_to<Key>,
     typename A = std::allocator<TableEntry<Key, T>>>
-void mark_table(HashTable<Key, T, Hash, KeyEqual, A> table) {
+void mark_table(HashTable<Key, T, Hash, KeyEqual, A>& table) {
     for (auto& entry: table) {
-        memory::mark_object(entry.key);
-        entry.value.mark( );
+        // if (entry.type()==EntryType::USED) {
+            memory::mark_object(entry.key);
+            entry.value.mark( );
+        // }
     }
 }
 

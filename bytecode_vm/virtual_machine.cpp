@@ -403,6 +403,66 @@ InterpretResult VirtualMachine::run( ) {
             stack_.push(Value(new ClassObject(name)));
             break;
         }
+        case OP_GET_PROPERTY: {
+            if (!stack_.peek(0).is_instance()) {
+                runtime_error("Only instances have properties.");
+            }
+            InstanceObject* instance = stack_.peek(0).instance( );
+            StringObject* name = READ_CONSTANT( ).string( );
+            entry_type entry = instance->fields.find(name);
+            if (entry.type( ) == EntryType::USED) {
+                stack_.pop();
+                stack_.push(entry.value);
+                break;
+            }
+            runtime_error("Undefined property '%s'.", name->chars);
+            return INTERPRET_RUNTIME_ERROR;
+        }
+        case OP_GET_PROPERTY_LONG: {
+            if (!stack_.peek(0).is_instance()) {
+                runtime_error("Only instances have properties.");
+            }
+            InstanceObject* instance = stack_.peek(0).instance( );
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            StringObject* name = chunk->constants[const_idx].string( );
+            entry_type entry = instance->fields.find(name);
+            if (entry.type( ) == EntryType::USED) {
+                stack_.pop();
+                stack_.push(entry.value);
+                break;
+            }
+            runtime_error("Undefined property '%s'.", name->chars);
+            return INTERPRET_RUNTIME_ERROR;
+        }
+        case OP_SET_PROPERTY: {
+            if (!stack_.peek(1).is_instance()) {
+                runtime_error("Only instances have fields.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            InstanceObject* instance = stack_.peek(1).instance( );
+            StringObject* name = READ_CONSTANT( ).string( );
+            instance->fields.insert(name, stack_.peek(0));
+            Value val = stack_.pop();
+            stack_.pop();
+            stack_.push(val);
+            break;
+        }
+        case OP_SET_PROPERTY_LONG: {
+            if (!stack_.peek(1).is_instance()) {
+                runtime_error("Only instances have fields.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            InstanceObject* instance = stack_.peek(1).instance( );
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            StringObject* name = chunk->constants[const_idx].string( );
+            instance->fields.insert(name, stack_.peek(0));
+            Value val = stack_.pop();
+            stack_.pop();
+            stack_.push(val);
+            break;
+        }
         case OP_RETURN: {
             Value result = stack_.pop( );
             close_upvalues(frame.slots);
