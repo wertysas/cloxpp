@@ -1,11 +1,9 @@
-fun outer() {
-  var x = "outside";
-  fun inner() {
-    print x;
-  }
+// Tests that we correctly track the line info across multiline strings.
+var a = "1
+2
+3
+";
 
-  return inner;
-}
-
-var closure = outer();
-closure();
+err; // // expect runtime error: Undefined variable 'err'.%
+// undefined1.bar // expect runtime error: Undefined variable 'undefined1'.
+//   = undefined2;

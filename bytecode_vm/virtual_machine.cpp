@@ -197,7 +197,8 @@ InterpretResult VirtualMachine::run( ) {
             StringObject* name = READ_CONSTANT( ).string( );
             entry_type& entry = global_table_.find(name);
             if (entry.type( ) != EntryType::USED) {    // contains
-                update_frame( );
+                frame.ip -= 1;
+                update_frame();
                 runtime_error("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
@@ -210,6 +211,7 @@ InterpretResult VirtualMachine::run( ) {
             StringObject* name = chunk->constants[const_idx].string( );
             entry_type& entry = global_table_.find(name);
             if (entry.type( ) != EntryType::USED) {
+                frame.ip -= 3;
                 update_frame( );
                 runtime_error("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
@@ -405,7 +407,9 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_GET_PROPERTY: {
             if (!stack_.peek(0).is_instance()) {
+                update_frame();
                 runtime_error("Only instances have properties.");
+                return INTERPRET_RUNTIME_ERROR;
             }
             InstanceObject* instance = stack_.peek(0).instance( );
             StringObject* name = READ_CONSTANT( ).string( );
@@ -415,12 +419,15 @@ InterpretResult VirtualMachine::run( ) {
                 stack_.push(entry.value);
                 break;
             }
+            update_frame();
             runtime_error("Undefined property '%s'.", name->chars);
             return INTERPRET_RUNTIME_ERROR;
         }
         case OP_GET_PROPERTY_LONG: {
             if (!stack_.peek(0).is_instance()) {
+                update_frame();
                 runtime_error("Only instances have properties.");
+                return INTERPRET_RUNTIME_ERROR;
             }
             InstanceObject* instance = stack_.peek(0).instance( );
             uint32_t const_idx = constant_long_idx(frame.ip);
@@ -432,11 +439,13 @@ InterpretResult VirtualMachine::run( ) {
                 stack_.push(entry.value);
                 break;
             }
+            update_frame();
             runtime_error("Undefined property '%s'.", name->chars);
             return INTERPRET_RUNTIME_ERROR;
         }
         case OP_SET_PROPERTY: {
             if (!stack_.peek(1).is_instance()) {
+                update_frame();
                 runtime_error("Only instances have fields.");
                 return INTERPRET_RUNTIME_ERROR;
             }
