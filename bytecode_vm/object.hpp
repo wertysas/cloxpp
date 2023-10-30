@@ -8,6 +8,7 @@
 #include "common.hpp"
 #include "memory/memory.hpp"
 #include "chunk.hpp"
+#include "hash_table.hpp"
 #include <cstring>
 
 using HashType = uint32_t;
@@ -115,6 +116,7 @@ struct ClosureObject : public Object {
         }
     }
     ~ClosureObject( ) { memory::free<UpValueObject*>(upvalues); }
+
     void* operator new(size_t);
     void operator delete(void* p);
 };
@@ -125,6 +127,28 @@ struct NativeObject : public Object {
     NativeFunction function;
     explicit NativeObject(NativeFunction fn)
         : Object(OBJ_NATIVE), function(fn) {}
+
+    void* operator new(size_t);
+    void operator delete(void* p);
+};
+
+
+struct ClassObject : public Object {
+    StringObject* name;
+    explicit ClassObject(StringObject* name) : Object(OBJ_CLASS), name(name) {}
+
+    void* operator new(size_t);
+    void operator delete(void* p);
+};
+
+struct InstanceObject : public Object {
+    using table_type = HashTable<StringObject*, Value, StringHash, StringEqual>;
+    using entry_type = TableEntry<StringObject*, Value>;
+    ClassObject* klass;
+    table_type fields;
+
+    explicit InstanceObject(ClassObject* klass) : Object(OBJ_INSTANCE), klass(klass), fields() {}
+
     void* operator new(size_t);
     void operator delete(void* p);
 };

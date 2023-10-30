@@ -12,6 +12,7 @@
 #include "memory_manager.hpp"
 #include "allocators.hpp"
 #include "object_fwd.hpp"
+#include "hash_table.hpp"
 
 #define INIT_CAPACITY 8
 #define GROWTH_CONSTANT 2
@@ -60,6 +61,21 @@ void free_array(void* ptr, size_t count) {
 void mark_temporaries();
 void mark_object(Object* obj);
 void mark_black(Object* obj);
+
+template<typename Key,
+    typename T,
+    typename Hash = std::hash<Key>,
+    typename KeyEqual = std::equal_to<Key>,
+    typename A = std::allocator<TableEntry<Key, T>>>
+void mark_table(HashTable<Key, T, Hash, KeyEqual, A>& table) {
+    for (auto& entry: table) {
+        // if (entry.type()==EntryType::USED) {
+            memory::mark_object(entry.key);
+            entry.value.mark( );
+        // }
+    }
+}
+
 
 }    // end of namespace memory
 

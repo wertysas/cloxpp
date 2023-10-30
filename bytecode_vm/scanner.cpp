@@ -162,7 +162,7 @@ inline bool Scanner::is_digit(char c) {
 inline bool Scanner::is_alpha(char c) {
     return (c >= 'a' && c <= 'z') ||
            (c >= 'A' && c <= 'Z') ||
-           c == '_';
+           c == '_' || c == '%';
 }
 
 

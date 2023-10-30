@@ -122,6 +122,24 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_CLOSE_UPVALUE: {
         return simple_instruction("OP_CLOSE_UPVALUE", offset);
     }
+    case OP_CLASS: {
+        return constant_instruction("OP_CLASS", chunk, offset);
+    }
+    case OP_CLASS_LONG: {
+        return constant_instruction_long("OP_CLASS_LONG", chunk, offset);
+    }
+    case OP_SET_PROPERTY: {
+        return constant_instruction("OP_SET_PROPERTY", chunk, offset);
+    }
+    case OP_SET_PROPERTY_LONG: {
+        return constant_instruction_long("OP_SET_PROPERTY_LONG", chunk, offset);
+    }
+    case OP_GET_PROPERTY: {
+        return constant_instruction("OP_GET_PROPERTY", chunk, offset);
+    }
+    case OP_GET_PROPERTY_LONG: {
+        return constant_instruction_long("OP_GET_PROPERTY_LONG", chunk, offset);
+    }
     case OP_RETURN:
         return simple_instruction("OP_RETURN", offset);
     default:
@@ -163,7 +181,7 @@ size_t constant_instruction_long(std::string op_name,
 }
 // Offset is the index of the opcode in the chunk
 // This could be improved by a binary search to
-// achieve O(log2(chunk_size)) instead of O(log2(chunk_size)
+// achieve O(log2(chunk_size)) instead of O(chunk_size)
 uint line_number(const Chunk& chunk, size_t offset) {
     for (int i = 0; i < chunk.line_numbers.count( ); i++) {
         if (chunk.line_numbers[i].start <= offset &&
