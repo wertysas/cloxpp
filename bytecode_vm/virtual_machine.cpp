@@ -459,6 +459,7 @@ InterpretResult VirtualMachine::run( ) {
         }
         case OP_SET_PROPERTY_LONG: {
             if (!stack_.peek(1).is_instance()) {
+                update_frame();
                 runtime_error("Only instances have fields.");
                 return INTERPRET_RUNTIME_ERROR;
             }
