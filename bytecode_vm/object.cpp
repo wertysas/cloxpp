@@ -130,3 +130,9 @@ void* InstanceObject::operator new(size_t) {
 void InstanceObject::operator delete(void* p) {
     memory::free<InstanceObject>(p);
 }
+void* BoundMethodObject::operator new(size_t) {
+    return allocate_object<BoundMethodObject>();
+}
+void BoundMethodObject::operator delete(void* p) {
+    memory::free<BoundMethodObject>(p);
+}

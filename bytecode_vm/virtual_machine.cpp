@@ -419,9 +419,11 @@ InterpretResult VirtualMachine::run( ) {
                 stack_.push(entry.value);
                 break;
             }
-            update_frame();
-            runtime_error("Undefined property '%s'.", name->chars);
-            return INTERPRET_RUNTIME_ERROR;
+            if (!bind_method(instance->klass, name)) {
+                update_frame();
+                runtime_error("Undefined property '%s'.", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
+            }
         }
         case OP_GET_PROPERTY_LONG: {
             if (!stack_.peek(0).is_instance()) {
@@ -471,6 +473,11 @@ InterpretResult VirtualMachine::run( ) {
             Value val = stack_.pop();
             stack_.pop();
             stack_.push(val);
+            break;
+        }
+        case OP_METHOD: {
+            auto* name = READ_CONSTANT().string();
+            define_method(name);
             break;
         }
         case OP_RETURN: {
@@ -592,6 +599,21 @@ void VirtualMachine::runtime_error(const char* fmt, ...) {
         }
     }
     stack_.reset( );
+}
+
+void VirtualMachine::define_method(StringObject* name) {
+    Value method = stack_.peek(0);
+    ClassObject* klass = stack_.peek(1).class_obj();
+    klass->methods.insert(name, method);
+    stack_.pop();
+}
+
+void VirtualMachine::bind_method(ClassObject* klass, StringObject* name) {
+    auto method_entry = klass->methods.find(name);
+    if (method_entry.type() != EntryType::USED) {
+        runtime_error("Undefined property '%s'.", name->chars);
+
+    }
 }
 
 void VirtualMachine::define_native_function(const char* name,

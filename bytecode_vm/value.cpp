@@ -117,6 +117,9 @@ void print_object(Value value) {
     case OBJ_INSTANCE:
         std::cout << value.instance()->klass->name->chars << " instance";
         break;
+    case OBJ_BOUND_METHOD:
+        print_function(value.bound_method()->method->function);
+        break;
     }
 }
 
@@ -154,6 +157,9 @@ ClassObject* Value::class_obj( ) const {
 InstanceObject* Value::instance( ) const {
     return static_cast<InstanceObject*>(value_.obj);
 }
+BoundMethodObject* Value::bound_method( ) const {
+    return static_cast<BoundMethodObject*>(value_.obj);
+}
 
 // FIXME: Cant this be cleaned up by using concept + template -> 1 constructor
 // instead of 4 even though class is not template?
@@ -174,6 +180,9 @@ Value::Value(ClassObject* class_object) : value_type_(VAL_OBJ), value_() {
 }
 Value::Value(InstanceObject* instance) : value_type_(VAL_OBJ), value_() {
     value_.obj = instance;
+}
+Value::Value(BoundMethodObject* bound_method) : value_type_(VAL_OBJ), value_() {
+    value_.obj = bound_method;
 }
 
 void Value::mark( ) const {

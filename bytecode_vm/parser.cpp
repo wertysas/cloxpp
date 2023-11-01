@@ -118,10 +118,10 @@ void Parser::call(bool assignable) {
 
 void Parser::dot(bool assignable) {
     consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
-    uint name_idx = identifier_constant(previous());
+    uint name_idx = identifier_constant(previous( ));
 
     if (assignable && match(TOKEN_EQUAL)) {
-        expression();
+        expression( );
         emit_byte_with_index(OP_SET_PROPERTY, OP_SET_PROPERTY_LONG, name_idx);
     } else {
         emit_byte_with_index(OP_GET_PROPERTY, OP_GET_PROPERTY_LONG, name_idx);
@@ -256,14 +256,16 @@ inline void Parser::emit_byte(OpCode opcode) {
     chunk( ).add_opcode(opcode, tokens_[current_ - 1].line);
 }
 
+inline void Parser::emit_byte(OpCode opcode, uint8_t idx) {
+    chunk( ).add_opcode(opcode, tokens_[current_ - 1].line);
+    chunk( ).add_opcode(static_cast<OpCode>(idx), tokens_[current_ - 1].line);
+}
+
 uint Parser::emit_constant(Value value) {
     chunk( ).constants.append(value);
     return chunk( ).constants.count( ) - 1;
 }
 
-inline void Parser::emit_byte(uint idx, OpCode opcode) {
-    chunk( ).add_opcode(opcode, tokens_[idx].line);
-}
 
 FunctionObject* Parser::parse_tokens( ) {
     if (current( ).type == TOKEN_ERROR) {
@@ -302,25 +304,32 @@ void Parser::declaration( ) {
 
 void Parser::class_declaration( ) {
     consume(TOKEN_IDENTIFIER, "Expect class name.");
-    uint idx = identifier_constant(previous());
-    declare_variable();
-
+    Token class_name = previous();
+    uint idx = identifier_constant(previous( ));
+    declare_variable( );
     emit_byte_with_index(OP_CLASS, OP_CLASS_LONG, idx);
+
     define_variable(idx);
 
+    named_variable(class_name, false);
     consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+    while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+        method( );
+    }
     consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+    emit_byte(OP_POP);
 }
 void Parser::function_declaration( ) {
     uint8_t global = parse_variable("Expect function name.");
     scope_->mark_initialized( );
-    function( );
+    function(FunctionType::FUNCTION);
     define_variable(global);
 }
 
-void Parser::function( ) {
-    StringObject* name = new StringObject(previous( ).start, previous( ).length);
-    FunctionScope function_scope(scope_, name);
+void Parser::function(FunctionType type) {
+    StringObject* name =
+        new StringObject(previous( ).start, previous( ).length);
+    FunctionScope function_scope(scope_, name, type);
     update_scope(&function_scope);
     begin_scope( );    // no end_scope() since scope lifetime only is inside
                        // function
@@ -344,16 +353,28 @@ void Parser::function( ) {
     FunctionObject* function = close_function_scope( );
     memory::temporary_roots.push_back(function);
     uint idx = emit_constant(Value(function));
-    memory::temporary_roots.pop_back();
+    memory::temporary_roots.pop_back( );
     emit_byte_with_index(OP_CLOSURE, OP_CLOSURE_LONG, idx);
 
     for (uint i = 0; i < function->upvalue_count; i++) {
         UpValue& upvalue = function_scope.upvalues[i];
-        // std::cout << "idx: " << upvalue.idx << " is_local: " << upvalue.is_local << std::endl;
+        // std::cout << "idx: " << upvalue.idx << " is_local: " <<
+        // upvalue.is_local << std::endl;
         emit_byte(upvalue.is_local ? static_cast<OpCode>(1)
                                    : static_cast<OpCode>(0));
         emit_byte(static_cast<OpCode>(upvalue.idx));
     }
+}
+
+void Parser::method( ) {
+    consume(TOKEN_IDENTIFIER, "Expect method name.");
+    uint idx = identifier_constant(previous( ));
+    if (idx >= 255) {
+        error("Can't declare class methods inside chunk with more than 255 "
+              "opcodes.");
+    }
+    function(FunctionType::METHOD);
+    emit_byte(OP_METHOD, idx);
 }
 
 uint8_t Parser::argument_list( ) {
@@ -617,19 +638,19 @@ void Parser::end_scope( ) {
     uint n = 0;
     while (scope_->local_count > 0 &&
            scope_->last( ).depth > scope_->scope_depth) {
-        if (scope_->locals[scope_->local_count-1].captured) {
-            if (n>0) {
+        if (scope_->locals[scope_->local_count - 1].captured) {
+            if (n > 0) {
                 emit_byte(OP_POPN);
                 emit_byte(static_cast<OpCode>(n));
             }
-            n=0;
+            n = 0;
             emit_byte(OP_CLOSE_UPVALUE);
         } else {
             ++n;
         }
         --scope_->local_count;
     }
-    if (n>0) {
+    if (n > 0) {
         emit_byte(OP_POPN);
         emit_byte(static_cast<OpCode>(n));
     }
@@ -681,14 +702,14 @@ void Parser::named_variable(const Token& token, bool assignable) {
 }
 
 uint Parser::resolve_local(FunctionScope& scope, const Token& token) {
-    for (uint i = scope.local_count; i > 0; i--) { // 0-1 = UINT_MAX
-        LocalVariable& local = scope[i-1];
+    for (uint i = scope.local_count; i > 0; i--) {    // 0-1 = UINT_MAX
+        LocalVariable& local = scope[i - 1];
         if (lexemes_equal(token, local.token)) {
             if (local.depth == -1) {
                 error("Can't read local variable in its own initializer.");
                 return UINT_MAX;
             }
-            return i-1;
+            return i - 1;
         }
     }
     return UINT_MAX;
@@ -717,12 +738,12 @@ uint Parser::add_upvalue(FunctionScope& scope, uint idx, bool is_local) {
 
     for (uint i = 0; i < upvalue_count; i++) {
         UpValue& upvalue = scope.upvalues[i];
-        if (upvalue.idx==idx && upvalue.is_local==is_local) {
+        if (upvalue.idx == idx && upvalue.is_local == is_local) {
             return i;
         }
     }
 
-    if (upvalue_count == UINT8_MAX+1) {
+    if (upvalue_count == UINT8_MAX + 1) {
         error("Too many closure variables in function.");
         return 0;
     }

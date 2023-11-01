@@ -79,7 +79,8 @@ class Parser {
     void declaration( );
     void class_declaration( );
     void function_declaration( );
-    void function();
+    void function(FunctionType type);
+    void method();
     uint8_t argument_list();
     void var_declaration( );
     void statement( );
@@ -105,7 +106,7 @@ class Parser {
     ParseRule* parse_rule(TokenType type);
 
     void emit_byte(OpCode opcode); // adds OpCode to chunk of function in scope
-    void emit_byte(uint token_idx, OpCode opcode);
+    void emit_byte(OpCode opcode, uint8_t idx);
     uint emit_constant(Value value);
     void emit_byte_with_index(OpCode op_short, OpCode op_long, uint idx);
     uint emit_jump(OpCode opcode);

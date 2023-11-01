@@ -12,5 +12,6 @@ struct NativeObject;
 struct ClosureObject;
 struct ClassObject;
 struct InstanceObject;
+struct BoundMethodObject;
 
 #endif    // CLOXPP_OBJECT_FWD_HPP

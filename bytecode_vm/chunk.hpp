@@ -72,6 +72,7 @@ enum OpCode : uint8_t {
     OP_CLOSE_UPVALUE,
     OP_CLASS,
     OP_CLASS_LONG,
+    OP_METHOD,
     OP_RETURN,
 };
 

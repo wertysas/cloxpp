@@ -140,6 +140,9 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_GET_PROPERTY_LONG: {
         return constant_instruction_long("OP_GET_PROPERTY_LONG", chunk, offset);
     }
+    case OP_METHOD: {
+        return constant_instruction("OP_METHOD", chunk, offset);
+    }
     case OP_RETURN:
         return simple_instruction("OP_RETURN", offset);
     default:
