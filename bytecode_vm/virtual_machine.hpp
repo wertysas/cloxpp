@@ -61,7 +61,7 @@ class VirtualMachine {
     bool call_value(Value callee, uint arg_count);
     bool call(ClosureObject* closure, uint arg_count);
     void define_method(StringObject* name);
-    void bind_method(ClassObject* klass, StringObject* name)
+    bool bind_method(ClassObject* klass, StringObject* name);
     void define_native_function(const char* name, NativeFunction native_function);
     void runtime_error(const char* fmt...);
 };

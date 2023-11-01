@@ -421,9 +421,9 @@ InterpretResult VirtualMachine::run( ) {
             }
             if (!bind_method(instance->klass, name)) {
                 update_frame();
-                runtime_error("Undefined property '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
+            break;
         }
         case OP_GET_PROPERTY_LONG: {
             if (!stack_.peek(0).is_instance()) {
@@ -512,6 +512,10 @@ bool VirtualMachine::call_value(Value callee, uint arg_count) {
         ClassObject* klass = callee.class_obj( );
         *(stack_.top()-arg_count-1) = Value( new InstanceObject(klass));
         return true;
+    }
+    case OBJ_BOUND_METHOD: {
+        BoundMethodObject* bound_method = callee.bound_method();
+        return call(bound_method->method, arg_count);
     }
     case OBJ_NATIVE: {
         NativeFunction native_function = callee.native_function( );
@@ -608,12 +612,18 @@ void VirtualMachine::define_method(StringObject* name) {
     stack_.pop();
 }
 
-void VirtualMachine::bind_method(ClassObject* klass, StringObject* name) {
+bool VirtualMachine::bind_method(ClassObject* klass, StringObject* name) {
     auto method_entry = klass->methods.find(name);
     if (method_entry.type() != EntryType::USED) {
         runtime_error("Undefined property '%s'.", name->chars);
-
+        return false;
     }
+
+    BoundMethodObject* bounded_method = new BoundMethodObject(stack_.peek(0), method_entry.value.closure());
+
+    stack_.pop();
+    stack_.push(Value(bounded_method));
+    return true;
 }
 
 void VirtualMachine::define_native_function(const char* name,
