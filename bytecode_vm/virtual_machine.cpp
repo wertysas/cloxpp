@@ -515,6 +515,7 @@ bool VirtualMachine::call_value(Value callee, uint arg_count) {
     }
     case OBJ_BOUND_METHOD: {
         BoundMethodObject* bound_method = callee.bound_method();
+        *(stack_.top()-arg_count-1) = bound_method->receiver;
         return call(bound_method->method, arg_count);
     }
     case OBJ_NATIVE: {

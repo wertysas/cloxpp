@@ -11,6 +11,7 @@
 #include "error_handling.hpp"
 #include "chunk.hpp"
 #include "function_scope.hpp"
+#include "class_scope.hpp"
 
 
 // Precedence enum where the different presedences are in order of importance
@@ -68,6 +69,7 @@ class Parser {
     void call(bool assignable);
     void dot(bool assignable);
     void variable(bool assignable);
+    void this_(bool assignable);
     void literal(bool assignable);
     void unary(bool assignable);
     void binary(bool assignable);
@@ -121,6 +123,7 @@ class Parser {
     uint previous_;
     uint current_;
     FunctionScope* scope_;
+    ClassScope* class_scope_;
     std::vector<Token> tokens_;
     ErrorReporter& error_reporter_;
     bool panic_mode_ = false;

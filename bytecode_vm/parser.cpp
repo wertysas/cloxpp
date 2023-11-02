@@ -11,7 +11,7 @@
 Parser::Parser(const std::vector<Token>& tokens,
                FunctionScope* scope,
                ErrorReporter& error_reporter)
-    : previous_(0), current_(0), tokens_(tokens), scope_(scope),
+    : previous_(0), current_(0), scope_(scope), class_scope_(nullptr), tokens_(tokens),
       error_reporter_(error_reporter), parse_rules( ) {
     parse_rules[TOKEN_LEFT_PAREN] = {
         &Parser::grouping, &Parser::call, PREC_CALL};
@@ -49,7 +49,7 @@ Parser::Parser(const std::vector<Token>& tokens,
     parse_rules[TOKEN_PRINT] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_RETURN] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_SUPER] = {nullptr, nullptr, PREC_NONE};
-    parse_rules[TOKEN_THIS] = {nullptr, nullptr, PREC_NONE};
+    parse_rules[TOKEN_THIS] = {&Parser::this_, nullptr, PREC_NONE};
     parse_rules[TOKEN_TRUE] = {&Parser::literal, nullptr, PREC_NONE};
     parse_rules[TOKEN_VAR] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_WHILE] = {nullptr, nullptr, PREC_NONE};
@@ -146,6 +146,14 @@ void Parser::literal(bool assignable) {
 
 void Parser::variable(bool assignable) {
     named_variable(previous( ), assignable);
+}
+
+void Parser::this_(bool asignable) {
+    if (class_scope_ == nullptr) {
+        error("Can't use 'this' outside of a class.");
+        return;
+    }
+    variable(false);
 }
 
 void Parser::unary(bool assignable) {
@@ -311,6 +319,9 @@ void Parser::class_declaration( ) {
 
     define_variable(idx);
 
+    ClassScope class_scope;
+    class_scope.enclosing_scope() = class_scope_;
+    class_scope_ = &class_scope;
     named_variable(class_name, false);
     consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
     while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
@@ -318,6 +329,8 @@ void Parser::class_declaration( ) {
     }
     consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
     emit_byte(OP_POP);
+
+    class_scope_ = class_scope_->enclosing_scope();
 }
 void Parser::function_declaration( ) {
     uint8_t global = parse_variable("Expect function name.");
