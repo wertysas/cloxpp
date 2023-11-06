@@ -1,9 +1,15 @@
-// Tests that we correctly track the line info across multiline strings.
-var a = "1
-2
-3
-";
+class CoffeeMaker {
+  init(coffee) {
+    this.coffee = coffee;
+  }
 
-err; // // expect runtime error: Undefined variable 'err'.%
-// undefined1.bar // expect runtime error: Undefined variable 'undefined1'.
-//   = undefined2;
+  brew() {
+    print "Enjoy your cup of " + this.coffee;
+
+    // No reusing the grounds!
+    this.coffee = nil;
+  }
+}
+
+var maker = CoffeeMaker("coffee and chicory");
+maker.brew();

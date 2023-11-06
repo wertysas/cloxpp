@@ -33,6 +33,7 @@ void MarkSweepCollector::mark_roots( ) {
     vm_->mark_call_frames();
     vm_->mark_upvalues();
     vm_->mark_globals( );
+    vm_->mark_init_string();
     parser_->mark_compiler_roots();
     mark_temporaries();
 }

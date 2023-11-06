@@ -34,10 +34,12 @@ class VirtualMachine {
     InterpretResult interpret(FunctionObject* function);
     InterpretResult run( );
     VirtualMachine( )
-        : stack_( ), global_table_( ) {
+        : stack_( ), global_table_( ), init_string_(nullptr) {
         define_native_function("clock", native_clock);
+        init_string_ = new StringObject("init", 4);
     }
 
+    void mark_init_string();
     void mark_globals();
     void mark_stack();
     void mark_call_frames();
@@ -52,6 +54,7 @@ class VirtualMachine {
     CallFrame frames_[FRAMES_MAX];
     uint frame_count_ = 0;
     UpValueObject* open_upvalues_ = nullptr;
+    StringObject* init_string_;
 
     inline CallFrame& current_frame() { return frames_[frame_count_-1]; }
 

@@ -386,7 +386,11 @@ void Parser::method( ) {
         error("Can't declare class methods inside chunk with more than 255 "
               "opcodes.");
     }
-    function(FunctionType::METHOD);
+    FunctionType fn_type = FunctionType::METHOD;
+    if (previous().length == 4 && memcmp(previous().start, "init", 4) == 0) {
+        fn_type = FunctionType::INITIALIZER;
+    }
+    function(fn_type);
     emit_byte(OP_METHOD, idx);
 }
 
@@ -465,6 +469,9 @@ void Parser::return_statement( ) {
     if (match(TOKEN_SEMICOLON)) {
         emit_return( );
     } else {
+        if (scope_->type == FunctionType::INITIALIZER) {
+            error("Can't return a value from an initializer");
+        }
         expression( );
         consume(TOKEN_SEMICOLON, "Expect ';' after return value;");
         emit_byte(OP_RETURN);
@@ -774,12 +781,14 @@ void Parser::and_(bool assignable) {
     patch_jump(end_jump);    // set jump to after second part of and_ expression
                              // (leaves falsy value on stack)
 }
+
 void Parser::or_(bool assignable) {
     uint end_jump = emit_jump(OP_JUMP_IF_TRUE);
     emit_byte(OP_POP);
     parse_precedence(PREC_OR);
     patch_jump(end_jump);
 }
+
 void Parser::emit_loop(uint loop_start) {
     emit_byte(OP_LOOP);
     uint offset = chunk( ).opcodes.count( ) - loop_start + 2;
@@ -790,8 +799,13 @@ void Parser::emit_loop(uint loop_start) {
     emit_byte(jumps[0]);
     emit_byte(jumps[1]);
 }
+
 void Parser::emit_return( ) {
-    emit_byte(OP_NIL);
+    if (scope_->type == FunctionType::INITIALIZER) {
+        emit_byte(OP_GET_LOCAL, 0);
+    } else {
+        emit_byte(OP_NIL);
+    }
     emit_byte(OP_RETURN);
 }
 

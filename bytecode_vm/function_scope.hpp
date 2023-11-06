@@ -22,7 +22,7 @@ struct UpValue {
     bool is_local;
 };
 
-enum class FunctionType { FUNCTION, SCRIPT, METHOD };
+enum class FunctionType { FUNCTION, SCRIPT, METHOD, INITIALIZER };
 
 struct FunctionScope {
     uint16_t local_count;

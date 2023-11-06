@@ -511,6 +511,13 @@ bool VirtualMachine::call_value(Value callee, uint arg_count) {
     case OBJ_CLASS: {
         ClassObject* klass = callee.class_obj( );
         *(stack_.top()-arg_count-1) = Value( new InstanceObject(klass));
+        entry_type initializer = klass->methods.find(init_string_);
+        if (initializer.type() == EntryType::USED ) {
+            return call(initializer.value.closure(), arg_count);
+        } else if (arg_count != 0) {
+            runtime_error("Expected 0 arguments but got %d.", arg_count);
+            return false;
+        }
         return true;
     }
     case OBJ_BOUND_METHOD: {
@@ -636,6 +643,9 @@ void VirtualMachine::define_native_function(const char* name,
     stack_.pop( );
 }
 
+void VirtualMachine::mark_init_string( ) {
+    memory::mark_object(init_string_);
+}
 
 void VirtualMachine::mark_globals( ) {
     for (auto& entry: global_table_) {
