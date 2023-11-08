@@ -20,7 +20,12 @@ size_t constant_instruction_long(std::string op_name,
                                  const Chunk& chunk,
                                  size_t offset);
 
-size_t byte_instruction(std::string op_name, const Chunk& chunk, size_t offset);
+size_t invoke_instruction(const char* op_name,
+                          const Chunk& chunk,
+                          size_t offset,
+                          bool long_instruction=false);
+
+    size_t byte_instruction(std::string op_name, const Chunk& chunk, size_t offset);
 size_t
 byte_instruction_long(std::string op_name, const Chunk& chunk, size_t offset);
 

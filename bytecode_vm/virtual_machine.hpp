@@ -62,6 +62,8 @@ class VirtualMachine {
     void close_upvalues(Value* last);
 
     bool call_value(Value callee, uint arg_count);
+    bool invoke(StringObject* name, uint8_t arg_count);
+    bool invoke_from_class(ClassObject* klas, StringObject* name, uint8_t arg_count);
     bool call(ClosureObject* closure, uint arg_count);
     void define_method(StringObject* name);
     bool bind_method(ClassObject* klass, StringObject* name);

@@ -39,10 +39,13 @@ bool operator==(const Value& v1, const Value& v2) {
     case VAL_NUMBER:
         return v1.number_value( ) == v2.number_value( );
     case VAL_OBJ:
-        auto* str1 = v1.string( );
-        auto* str2 = v2.string( );
-        return str1->length == str2->length &&
-               (memcmp(str1->chars, str2->chars, str1->length) == 0);
+        if (v1.is_string() && v2.is_string()) {
+            auto* str1 = v1.string( );
+            auto* str2 = v2.string( );
+            return str1->length == str2->length &&
+                   (memcmp(str1->chars, str2->chars, str1->length) == 0);
+        }
+        else return v1.object_value() == v2.object_value();
     }
     return false;
 }

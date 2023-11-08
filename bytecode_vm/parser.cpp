@@ -123,6 +123,10 @@ void Parser::dot(bool assignable) {
     if (assignable && match(TOKEN_EQUAL)) {
         expression( );
         emit_byte_with_index(OP_SET_PROPERTY, OP_SET_PROPERTY_LONG, name_idx);
+    } else if (match(TOKEN_LEFT_PAREN)) {
+        uint8_t arg_count = argument_list();
+        emit_byte_with_index(OP_INVOKE, OP_INVOKE_LONG, name_idx);
+        emit_byte(static_cast<OpCode>(arg_count));
     } else {
         emit_byte_with_index(OP_GET_PROPERTY, OP_GET_PROPERTY_LONG, name_idx);
     }
@@ -470,7 +474,7 @@ void Parser::return_statement( ) {
         emit_return( );
     } else {
         if (scope_->type == FunctionType::INITIALIZER) {
-            error("Can't return a value from an initializer");
+            error("Can't return a value from an initializer.");
         }
         expression( );
         consume(TOKEN_SEMICOLON, "Expect ';' after return value;");

@@ -108,6 +108,12 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_CALL: {
         return byte_instruction("OP_CALL", chunk, offset);
     }
+    case OP_INVOKE: {
+        return invoke_instruction("OP_INVOKE", chunk, offset);
+    }
+    case OP_INVOKE_LONG: {
+        return invoke_instruction("OP_INVOKE", chunk, offset, true);
+    }
     case OP_CLOSURE: {
         offset++;
         uint8_t const_idx = chunk.opcodes[offset++];
@@ -158,6 +164,7 @@ size_t simple_instruction(std::string op_name, size_t offset) {
 }
 
 size_t
+
 constant_instruction(std::string op_name, const Chunk& chunk, size_t offset) {
     uint8_t const_idx = chunk.opcodes[offset + 1];
     Value val = chunk.constants[const_idx];
@@ -182,6 +189,33 @@ size_t constant_instruction_long(std::string op_name,
     std::cout << std::endl;
     return offset + 4;
 }
+
+size_t invoke_instruction(const char* op_name,
+                          const Chunk& chunk,
+                          size_t offset,
+                          bool long_instruction) {
+    Value val;
+    size_t new_offset = offset+1;
+    uint32_t const_idx;
+    if (long_instruction) {
+        uint8_t* b = reinterpret_cast<uint8_t*>(&chunk.opcodes[new_offset]);
+        const_idx = (b[0] | b[1] << 8 | b[2] << 16);
+        val = chunk.constants[const_idx];
+        new_offset += 3;
+    } else {
+        const_idx = chunk.opcodes[new_offset];
+        val = chunk.constants[const_idx];
+        new_offset += 1;
+    }
+    uint8_t arg_count = chunk.opcodes[new_offset++];
+
+    std::cout << std::setw(16) << std::left << op_name << " (" << arg_count << " args)" << std::right
+              << std::setw(5) << static_cast<unsigned int>(const_idx) << "\t";
+    print_value(val);
+    std::cout << std::endl;
+    return new_offset;
+}
+
 // Offset is the index of the opcode in the chunk
 // This could be improved by a binary search to
 // achieve O(log2(chunk_size)) instead of O(chunk_size)
