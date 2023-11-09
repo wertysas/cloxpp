@@ -72,6 +72,7 @@ void mark_black(Object* obj) {
     case OBJ_CLASS: {
         auto* class_obj = static_cast<ClassObject*>(obj);
         mark_object(class_obj->name);
+        mark_table(class_obj->methods);
         break;
     }
     case OBJ_INSTANCE: {
@@ -79,6 +80,13 @@ void mark_black(Object* obj) {
         mark_object(instance);
         mark_table(instance->fields);
         break;
+    }
+    case OBJ_BOUND_METHOD: {
+        auto* bound_method = static_cast<BoundMethodObject*>(obj);
+        mark_object(bound_method);
+        bound_method->receiver.mark();
+        break;
+
     }
     }
 }
@@ -119,9 +127,18 @@ void free_object(Object* object) {
         delete static_cast<UpValueObject*>(object);
         break;
     }
-    case OBJ_CLASS:
+    case OBJ_CLASS: {
         delete static_cast<ClassObject*>(object);
         break;
+    }
+    case OBJ_INSTANCE: {
+        delete static_cast<InstanceObject*>(object);
+        break;
+    }
+    case OBJ_BOUND_METHOD: {
+        delete static_cast<BoundMethodObject*>(object);
+        break;
+    }
     }
 }
 

@@ -1,9 +1,4 @@
-// Tests that we correctly track the line info across multiline strings.
-var a = "1
-2
-3
-";
+class Foo {}
+var foo = Foo();
 
-err; // // expect runtime error: Undefined variable 'err'.%
-// undefined1.bar // expect runtime error: Undefined variable 'undefined1'.
-//   = undefined2;
+foo.bar; // expect runtime error: Undefined property 'bar'.

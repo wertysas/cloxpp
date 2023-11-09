@@ -11,7 +11,6 @@
 #include "object.hpp"
 
 
-
 struct LocalVariable {
     short depth = -1;
     bool captured = false;
@@ -23,7 +22,7 @@ struct UpValue {
     bool is_local;
 };
 
-enum class FunctionType { FUNCTION, SCRIPT };
+enum class FunctionType { FUNCTION, SCRIPT, METHOD, INITIALIZER };
 
 struct FunctionScope {
     uint16_t local_count;
@@ -45,17 +44,25 @@ struct FunctionScope {
         local.token.length = 0;
     }
 
-    FunctionScope(FunctionScope* enclosing_, StringObject* name)
-        : local_count(0), scope_depth(0), enclosing(enclosing_),
-          type(FunctionType::FUNCTION), locals{ } {
+    FunctionScope(FunctionScope* enclosing_,
+                  StringObject* name,
+                  FunctionType type)
+        : local_count(0), scope_depth(0), enclosing(enclosing_), type(type),
+          locals{ } {
         memory::temporary_roots.push_back(name);
         function = new FunctionObject(name);
-        memory::temporary_roots.pop_back();
+        memory::temporary_roots.pop_back( );
         LocalVariable& local = locals[local_count++];
         local.depth = 0;
         local.captured = false;
-        local.token.start = "";
-        local.token.length = 0;
+
+        if (type == FunctionType::FUNCTION) {
+            local.token.start = "";
+            local.token.length = 0;
+        } else {
+            local.token.start = "this";
+            local.token.length = 4;
+        }
     }
 
     constexpr LocalVariable& operator[](size_t index) {
@@ -81,7 +88,6 @@ struct FunctionScope {
         locals[local_count - 1].depth = scope_depth;
     }
 };
-
 
 
 #endif    // CLOXPP_FUNCTION_SCOPE_HPP

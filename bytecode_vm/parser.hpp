@@ -11,6 +11,7 @@
 #include "error_handling.hpp"
 #include "chunk.hpp"
 #include "function_scope.hpp"
+#include "class_scope.hpp"
 
 
 // Precedence enum where the different presedences are in order of importance
@@ -68,6 +69,7 @@ class Parser {
     void call(bool assignable);
     void dot(bool assignable);
     void variable(bool assignable);
+    void this_(bool assignable);
     void literal(bool assignable);
     void unary(bool assignable);
     void binary(bool assignable);
@@ -79,7 +81,8 @@ class Parser {
     void declaration( );
     void class_declaration( );
     void function_declaration( );
-    void function();
+    void function(FunctionType type);
+    void method();
     uint8_t argument_list();
     void var_declaration( );
     void statement( );
@@ -105,7 +108,7 @@ class Parser {
     ParseRule* parse_rule(TokenType type);
 
     void emit_byte(OpCode opcode); // adds OpCode to chunk of function in scope
-    void emit_byte(uint token_idx, OpCode opcode);
+    void emit_byte(OpCode opcode, uint8_t idx);
     uint emit_constant(Value value);
     void emit_byte_with_index(OpCode op_short, OpCode op_long, uint idx);
     uint emit_jump(OpCode opcode);
@@ -120,6 +123,7 @@ class Parser {
     uint previous_;
     uint current_;
     FunctionScope* scope_;
+    ClassScope* class_scope_;
     std::vector<Token> tokens_;
     ErrorReporter& error_reporter_;
     bool panic_mode_ = false;

@@ -12,6 +12,7 @@
 enum ObjectType : uint8_t {
     OBJ_CLASS,
     OBJ_INSTANCE,
+    OBJ_BOUND_METHOD,
     OBJ_CLOSURE,
     OBJ_UPVALUE,
     OBJ_FUNCTION,
@@ -49,6 +50,7 @@ class Value {
     Value(ClosureObject* closure_object);
     Value(ClassObject* class_object);
     Value(InstanceObject* instance);
+    Value(BoundMethodObject* bound_method);
 
     // Copy CTOR and assignment operator, these are essentially std::memmoves
     // for more info see:
@@ -72,6 +74,7 @@ class Value {
     ClosureObject* closure( ) const;
     ClassObject* class_obj() const;
     InstanceObject* instance() const;
+    BoundMethodObject* bound_method() const;
 
     // Value type_ checks
     inline ValueType value_type( ) const { return value_type_; }
@@ -88,6 +91,7 @@ class Value {
     inline bool is_closure( ) const { return is_object_type(OBJ_CLOSURE); }
     inline bool is_class( ) const  { return is_object_type(OBJ_CLASS); }
     inline bool is_instance() const { return is_object_type(OBJ_INSTANCE); }
+    inline bool is_bound_method() const { return is_object_type(OBJ_BOUND_METHOD); }
     // String functions
     inline char* c_string( ) const;
 

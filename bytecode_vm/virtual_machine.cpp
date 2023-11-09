@@ -325,6 +325,28 @@ InterpretResult VirtualMachine::run( ) {
             switch_frame( );
             break;
         }
+        case OP_INVOKE: {
+            StringObject* method = READ_CONSTANT().string();
+            uint8_t arg_count = READ_BYTE();
+            update_frame();
+            if (!invoke(method, arg_count)) {
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            // frame = &vm.frames
+            switch_frame();
+            break;
+
+        }
+        case OP_INVOKE_LONG: {
+            uint32_t const_idx = constant_long_idx(frame.ip);
+            frame.ip += 3;
+            StringObject* method = chunk->constants[const_idx].string();
+            uint8_t arg_count = READ_BYTE();
+            if (!invoke(method, arg_count)) {
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            switch_frame(); // this or update?
+        }
         case OP_CLOSURE: {
             FunctionObject* function = READ_CONSTANT( ).function( );
             stack_.push(Value(function));
@@ -420,8 +442,10 @@ InterpretResult VirtualMachine::run( ) {
                 break;
             }
             update_frame();
-            runtime_error("Undefined property '%s'.", name->chars);
-            return INTERPRET_RUNTIME_ERROR;
+            if (!bind_method(instance->klass, name)) {
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            break;
         }
         case OP_GET_PROPERTY_LONG: {
             if (!stack_.peek(0).is_instance()) {
@@ -440,8 +464,10 @@ InterpretResult VirtualMachine::run( ) {
                 break;
             }
             update_frame();
-            runtime_error("Undefined property '%s'.", name->chars);
-            return INTERPRET_RUNTIME_ERROR;
+            if (!bind_method(instance->klass, name)) {
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            break;
         }
         case OP_SET_PROPERTY: {
             if (!stack_.peek(1).is_instance()) {
@@ -471,6 +497,11 @@ InterpretResult VirtualMachine::run( ) {
             Value val = stack_.pop();
             stack_.pop();
             stack_.push(val);
+            break;
+        }
+        case OP_METHOD: {
+            auto* name = READ_CONSTANT().string();
+            define_method(name);
             break;
         }
         case OP_RETURN: {
@@ -504,7 +535,19 @@ bool VirtualMachine::call_value(Value callee, uint arg_count) {
     case OBJ_CLASS: {
         ClassObject* klass = callee.class_obj( );
         *(stack_.top()-arg_count-1) = Value( new InstanceObject(klass));
+        entry_type initializer = klass->methods.find(init_string_);
+        if (initializer.type() == EntryType::USED ) {
+            return call(initializer.value.closure(), arg_count);
+        } else if (arg_count != 0) {
+            runtime_error("Expected 0 arguments but got %d.", arg_count);
+            return false;
+        }
         return true;
+    }
+    case OBJ_BOUND_METHOD: {
+        BoundMethodObject* bound_method = callee.bound_method();
+        *(stack_.top()-arg_count-1) = bound_method->receiver;
+        return call(bound_method->method, arg_count);
     }
     case OBJ_NATIVE: {
         NativeFunction native_function = callee.native_function( );
@@ -517,6 +560,30 @@ bool VirtualMachine::call_value(Value callee, uint arg_count) {
         runtime_error("Can only call functions and classes.");
         return false;
     }
+}
+
+bool VirtualMachine::invoke(StringObject* name, uint8_t arg_count) {
+    Value receiver = stack_.peek(arg_count);
+
+    if (!receiver.instance()) {
+        runtime_error("Only instances have methods.");
+    }
+    InstanceObject* instance = receiver.instance();
+    entry_type entry = instance->fields.find(name);
+    if (entry.type() == EntryType::USED) {
+        *(stack_.top()-arg_count-1) = entry.value;
+        return call_value(entry.value, arg_count);
+    }
+    return invoke_from_class(instance->klass, name, arg_count);
+}
+
+bool VirtualMachine::invoke_from_class(ClassObject* klass, StringObject* name, uint8_t arg_count) {
+    entry_type entry = klass->methods.find(name);
+    if (entry.type( ) != EntryType::USED) {
+        runtime_error("Undefined property '%s'.", name->chars);
+        return false;
+    }
+    return call(entry.value.closure(), arg_count);
 }
 
 UpValueObject* VirtualMachine::capture_upvalue(Value* local_value) {
@@ -594,6 +661,27 @@ void VirtualMachine::runtime_error(const char* fmt, ...) {
     stack_.reset( );
 }
 
+void VirtualMachine::define_method(StringObject* name) {
+    Value method = stack_.peek(0);
+    ClassObject* klass = stack_.peek(1).class_obj();
+    klass->methods.insert(name, method);
+    stack_.pop();
+}
+
+bool VirtualMachine::bind_method(ClassObject* klass, StringObject* name) {
+    auto method_entry = klass->methods.find(name);
+    if (method_entry.type() != EntryType::USED) {
+        runtime_error("Undefined property '%s'.", name->chars);
+        return false;
+    }
+
+    BoundMethodObject* bounded_method = new BoundMethodObject(stack_.peek(0), method_entry.value.closure());
+
+    stack_.pop();
+    stack_.push(Value(bounded_method));
+    return true;
+}
+
 void VirtualMachine::define_native_function(const char* name,
                                             NativeFunction native_function) {
     stack_.push(Value(new StringObject(name, static_cast<uint>(strlen(name)))));
@@ -603,6 +691,9 @@ void VirtualMachine::define_native_function(const char* name,
     stack_.pop( );
 }
 
+void VirtualMachine::mark_init_string( ) {
+    memory::mark_object(init_string_);
+}
 
 void VirtualMachine::mark_globals( ) {
     for (auto& entry: global_table_) {

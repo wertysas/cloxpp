@@ -134,7 +134,12 @@ struct NativeObject : public Object {
 
 
 struct ClassObject : public Object {
+    using table_type = HashTable<StringObject*, Value, StringHash, StringEqual>;
+    using entry_type = TableEntry<StringObject*, Value>;
+
     StringObject* name;
+    table_type methods;
+
     explicit ClassObject(StringObject* name) : Object(OBJ_CLASS), name(name) {}
 
     void* operator new(size_t);
@@ -144,15 +149,28 @@ struct ClassObject : public Object {
 struct InstanceObject : public Object {
     using table_type = HashTable<StringObject*, Value, StringHash, StringEqual>;
     using entry_type = TableEntry<StringObject*, Value>;
+
     ClassObject* klass;
     table_type fields;
 
-    explicit InstanceObject(ClassObject* klass) : Object(OBJ_INSTANCE), klass(klass), fields() {}
+    explicit InstanceObject(ClassObject* klass)
+        : Object(OBJ_INSTANCE), klass(klass), fields( ) {}
 
     void* operator new(size_t);
     void operator delete(void* p);
 };
 
+
+struct BoundMethodObject : public Object {
+    Value receiver;
+    ClosureObject* method;
+
+    explicit BoundMethodObject(Value receiver, ClosureObject* method)
+        : Object(OBJ_BOUND_METHOD), receiver(receiver), method(method) {}
+
+    void* operator new(size_t);
+    void operator delete(void* p);
+};
 
 template<typename T>
 T* allocate_object( ) {
