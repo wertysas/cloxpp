@@ -112,7 +112,10 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
         return invoke_instruction("OP_INVOKE", chunk, offset);
     }
     case OP_INVOKE_LONG: {
-        return invoke_instruction("OP_INVOKE", chunk, offset, true);
+        return invoke_instruction("OP_INVOKE_LONG", chunk, offset, true);
+    }
+    case OP_SUPER_INVOKE: {
+        return invoke_instruction("OP_SUPER_INVOKE", chunk, offset);
     }
     case OP_CLOSURE: {
         offset++;
@@ -134,6 +137,9 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     case OP_CLASS_LONG: {
         return constant_instruction_long("OP_CLASS_LONG", chunk, offset);
     }
+    case OP_INHERIT: {
+        return simple_instruction("OP_INHERIT", offset);
+    }
     case OP_SET_PROPERTY: {
         return constant_instruction("OP_SET_PROPERTY", chunk, offset);
     }
@@ -145,6 +151,9 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset) {
     }
     case OP_GET_PROPERTY_LONG: {
         return constant_instruction_long("OP_GET_PROPERTY_LONG", chunk, offset);
+    }
+    case OP_GET_SUPER: {
+        return constant_instruction("OP_GET_SUPER", chunk, offset);
     }
     case OP_METHOD: {
         return constant_instruction("OP_METHOD", chunk, offset);

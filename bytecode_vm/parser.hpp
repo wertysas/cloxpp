@@ -70,6 +70,7 @@ class Parser {
     void dot(bool assignable);
     void variable(bool assignable);
     void this_(bool assignable);
+    void super_(bool assignable);
     void literal(bool assignable);
     void unary(bool assignable);
     void binary(bool assignable);

@@ -65,6 +65,11 @@ InterpretResult VirtualMachine::run( ) {
         *current_frame = frame;
     };
 
+    auto report_runtime_error = [&](auto* error_msg) {
+        update_frame();
+        return runtime_error(error_msg);
+    };
+
     for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
         std::cout << "STACK:" << std ::endl;
@@ -347,6 +352,17 @@ InterpretResult VirtualMachine::run( ) {
             }
             switch_frame(); // this or update?
         }
+        case OP_SUPER_INVOKE: {
+            StringObject* method = READ_CONSTANT().string();
+            uint8_t arg_count = READ_BYTE();
+            ClassObject* super_class = stack_.pop().class_obj();
+            update_frame();
+            if (!invoke_from_class(super_class, method, arg_count)) {
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            switch_frame();
+            break;
+        }
         case OP_CLOSURE: {
             FunctionObject* function = READ_CONSTANT( ).function( );
             stack_.push(Value(function));
@@ -427,6 +443,20 @@ InterpretResult VirtualMachine::run( ) {
             stack_.push(Value(new ClassObject(name)));
             break;
         }
+        case OP_INHERIT: {
+            Value super = stack_.peek(1);
+            if (!super.is_class()) {
+                update_frame();
+                runtime_error("Superclass must be a class.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            ClassObject* super_class = super.class_obj();
+            ClassObject* derived_class = stack_.peek(0).class_obj();
+            derived_class->methods.merge(super_class->methods);
+            stack_.pop();
+            break;
+
+        }
         case OP_GET_PROPERTY: {
             if (!stack_.peek(0).is_instance()) {
                 update_frame();
@@ -497,6 +527,15 @@ InterpretResult VirtualMachine::run( ) {
             Value val = stack_.pop();
             stack_.pop();
             stack_.push(val);
+            break;
+        }
+        case OP_GET_SUPER: {
+            StringObject* name = READ_CONSTANT( ).string( );
+            ClassObject* super_class = stack_.pop().class_obj();
+            update_frame();
+            if (!bind_method(super_class, name)) {
+                return INTERPRET_RUNTIME_ERROR;
+            }
             break;
         }
         case OP_METHOD: {

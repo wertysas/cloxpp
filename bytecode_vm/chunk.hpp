@@ -38,8 +38,10 @@ enum OpCode : uint8_t {
     OP_SET_PROPERTY_LONG,
     OP_GET_PROPERTY,
     OP_GET_PROPERTY_LONG,
+    OP_GET_SUPER,
     OP_INVOKE,
     OP_INVOKE_LONG,
+    OP_SUPER_INVOKE,
 
     // Null, Boolean and Comparisons
     OP_NIL,
@@ -74,6 +76,7 @@ enum OpCode : uint8_t {
     OP_CLOSE_UPVALUE,
     OP_CLASS,
     OP_CLASS_LONG,
+    OP_INHERIT,
     OP_METHOD,
     OP_RETURN,
 };

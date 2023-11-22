@@ -48,7 +48,7 @@ Parser::Parser(const std::vector<Token>& tokens,
     parse_rules[TOKEN_OR] = {nullptr, &Parser::or_, PREC_OR};
     parse_rules[TOKEN_PRINT] = {nullptr, nullptr, PREC_NONE};
     parse_rules[TOKEN_RETURN] = {nullptr, nullptr, PREC_NONE};
-    parse_rules[TOKEN_SUPER] = {nullptr, nullptr, PREC_NONE};
+    parse_rules[TOKEN_SUPER] = {&Parser::super_, nullptr, PREC_NONE};
     parse_rules[TOKEN_THIS] = {&Parser::this_, nullptr, PREC_NONE};
     parse_rules[TOKEN_TRUE] = {&Parser::literal, nullptr, PREC_NONE};
     parse_rules[TOKEN_VAR] = {nullptr, nullptr, PREC_NONE};
@@ -158,6 +158,30 @@ void Parser::this_(bool asignable) {
         return;
     }
     variable(false);
+}
+
+void Parser::super_(bool assignable) {
+    if (class_scope_ == nullptr)  {
+        error("Can't use 'super' outside of a class.");
+    } else if (!class_scope_->has_super) {
+        error("Can't use 'super' in a class with no superclass.");
+    }
+
+
+    consume(TOKEN_DOT, "Expect '.' after 'super'.");
+    consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
+    uint8_t name_idx = identifier_constant(previous());
+    named_variable(Token(TOKEN_STRING, "this", 4, 0), false);
+
+    if (match(TOKEN_LEFT_PAREN)) {
+        uint8_t arg_count = argument_list();
+        named_variable(Token(TOKEN_STRING, "super", 5, 0), false);
+        emit_byte(OP_SUPER_INVOKE, name_idx);
+        emit_byte(static_cast<OpCode>(arg_count));
+    } else {
+        emit_byte(OP_GET_SUPER, name_idx);
+        emit_byte(OP_GET_SUPER, name_idx);
+    }
 }
 
 void Parser::unary(bool assignable) {
@@ -323,9 +347,26 @@ void Parser::class_declaration( ) {
 
     define_variable(idx);
 
-    ClassScope class_scope;
-    class_scope.enclosing_scope() = class_scope_;
+    ClassScope class_scope(class_scope_);
     class_scope_ = &class_scope;
+
+    if (match(TOKEN_LESS)) {
+        consume(TOKEN_IDENTIFIER, "Expect superclass name.");
+        variable(false);
+
+        if (lexemes_equal(class_name, previous())) {
+            error("A class can't inherit from itself.");
+        }
+
+        begin_scope();
+        scope_->add_local(Token(TOKEN_SUPER, "super", 5, 0));
+        define_variable(0);
+
+        named_variable(class_name, false);
+        emit_byte(OP_INHERIT);
+        class_scope.has_super = true;
+    }
+
     named_variable(class_name, false);
     consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
     while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
