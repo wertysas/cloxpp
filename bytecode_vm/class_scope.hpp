@@ -9,9 +9,10 @@
 class ClassScope {
     ClassScope* enclosing_scope_;
     public:
-    ClassScope( ) : enclosing_scope_(nullptr){ };
+    bool has_super = false;
+    ClassScope( ) : enclosing_scope_(nullptr) { };
     ClassScope(ClassScope* enclosing) : enclosing_scope_(enclosing){ };
-    ClassScope*& enclosing_scope() { return enclosing_scope_; }
+    ClassScope* enclosing_scope() { return enclosing_scope_; }
 };
 
 

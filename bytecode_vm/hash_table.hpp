@@ -123,6 +123,7 @@ class HashTable : public A {    // note, we inherit from allocator for EBCO
     void insert(key_type const& key, value_type const& value) {
         return insert(entry_type(key, value));
     }
+    void merge(const HashTable& other);
     void erase(const Key& key);       // deletes element
     bool contains(const Key& key);    // checks if the hash table contains a
                                       // value with given key
@@ -136,6 +137,15 @@ class HashTable : public A {    // note, we inherit from allocator for EBCO
     uint capacity_;
     TableEntry<Key, T>* entries_;
 };
+
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
+void HashTable<Key, T, Hash, KeyEqual, A>::merge(const HashTable& other) {
+    for (auto& entry: other) {
+        if (entry.type() == EntryType::USED) {
+            insert(entry);
+        }
+    }
+}
 
 template<typename Key, typename T, typename Hash, typename KeyEqual, typename A>
 void HashTable<Key, T, Hash, KeyEqual, A>::insert(const entry_type& entry) {
