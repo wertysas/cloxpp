@@ -179,7 +179,7 @@ void Parser::super_(bool assignable) {
         emit_byte(OP_SUPER_INVOKE, name_idx);
         emit_byte(static_cast<OpCode>(arg_count));
     } else {
-        emit_byte(OP_GET_SUPER, name_idx);
+        named_variable(Token(TOKEN_STRING, "super", 5, 0), false);
         emit_byte(OP_GET_SUPER, name_idx);
     }
 }
@@ -374,6 +374,10 @@ void Parser::class_declaration( ) {
     }
     consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
     emit_byte(OP_POP);
+
+    // if (class_scope.has_super) {
+    //     end_scope();
+    // }
 
     class_scope_ = class_scope_->enclosing_scope();
 }
