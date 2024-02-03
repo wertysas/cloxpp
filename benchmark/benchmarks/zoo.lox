@@ -27,5 +27,8 @@ while (sum < 10000000) {
             + zoo.mouse();
 }
 
-print sum;
-print clock() - start;
+var elapsed = clock() - start;
+print "elapsed:";
+print elapsed;
+print "passed:";
+print (sum-10000002)<0.00001;

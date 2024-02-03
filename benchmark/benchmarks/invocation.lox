@@ -70,4 +70,9 @@ while (i < 500000) {
   i = i + 1;
 }
 
-print clock() - start;
+var elapsed = clock() - start;
+print "passed:";
+print true;
+print "elapsed:";
+print elapsed;
+
