@@ -2,16 +2,22 @@
 """
 Author: Johan Ericsson
 """
+import sys
 from enum import Enum
+from dataclasses import dataclass
 import subprocess
 import os
+import pathlib
+from pathlib import Path
 import argparse
-import json
 from time import localtime, strftime
 
-TIME_OUT = 2    # maximum running time in secs per test case
 
-class Colours:
+CMAKE_DIR = "cmake-build-release"
+
+
+@dataclass
+class Colors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKCYAN = '\033[96m'
@@ -23,39 +29,119 @@ class Colours:
     UNDERLINE = '\033[4m'
 
 
-repo_path = os.path.dirname(os.path.abspath(__file__))
+@dataclass
+class Benchmark:
+    name: str
+    path: pathlib.Path
 
-with open("sym_tsp.json") as fp:
-    j = json.load(fp)
 
+def read_benchmarks(benchmarks_path=None):
+    if benchmarks_path is None:
+        dir_path = Path(__file__).parent
+        bm_path = dir_path.joinpath("benchmarks")
+    else:
+        bm_path = Path(benchmarks_path)
+    benchmarks = {}
+    for bmp in bm_path.iterdir():
+        if bmp.suffix != ".lox":
+            print(f"{Colors.WARNING}Skipping file: '{bmp.name}' (wrong file extension){Colors.ENDC}")
+        bm = Benchmark(bmp.stem, bmp)
+        benchmarks[bmp.stem] = bm
+    return benchmarks
+
+
+def parse_bechmark_output(output_string):
+    lines = output_string.splitlines()
+    for i, line in enumerate(lines):
+        if "elapsed" in line:
+            return float(lines[i+1])
+    return -1e6
+
+
+def run_benchmark(benchmark, iterations):
+    print(80*"-")
+    print(f"benchmark: {benchmark.name}")
+    timings = []
+    for i in range(iterations):
+        sys.stdout.write(f"\r{Colors.WARNING}iteration: {i+1}/{iterations}{Colors.ENDC}")
+        sys.stdout.flush()
+        try:
+            result = subprocess.run([interpreter_path, benchmark.path], capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            print(f"{Colors.FAIL}Unexpected interpreter failure\nerror code: {e.returncode}\nerror output: {e.stderr}")
+        timings.append(parse_bechmark_output(result.stdout))
+    sys.stdout.write("\r")
+    sys.stdout.flush()
+    print(*timings, sep=',')
+
+
+benchmarks = read_benchmarks()
 parser = argparse.ArgumentParser(prog="benchmark", description="LoX benchmark runner")
-parser.add_argument("-t", "--test-case",
-                    choices=list(j["problems"].keys()) + ["all"],
+parser.add_argument("-v", "--verbose",
+                    action='store_true',
+                    help="verbose (debug) mode",
+                    dest="verbose",
+                    default=False)
+parser.add_argument("-b", "--benchmark",
+                    choices=list(benchmarks.keys()) + ["all"],
                     type=str,
-                    help="Which testcase from TSPLIB to run",
-                    dest="test_case",
-                    default="all"
-                    )
+                    help="benchmark to run",
+                    dest="bm",
+                    default="all")
+file_path = Path(__file__).parent
 parser.add_argument("-e", "--executable",
                     type=str,
-                    help="path to executable",
-                    dest="prog",
-                    default="/Users/johan/code/KTH/TSP2D/cmake-build-debug/TSP2D"
-                    )
-
+                    help="path to Lox interpeter",
+                    dest="interpreter_path",
+                    default=None)
+parser.add_argument("-i", "--iterations", type=int, nargs='+',
+                    help="iterations per benchmark and discarded iterations at beginning"
+                         "i.e. '-i 5 1' yields 5 iterations measures and one warm up iteration",
+                    dest="iterations",
+                    default=[5, 1])
 args = parser.parse_args()
-test_case = args.test_case
-binary_path = args.prog
+verbose = args.verbose
+test_case = args.bm
+interpreter_path = args.interpreter_path
 
 
-# if test_case != "all":
-#     try:
-#         test_path = j["problems"][test_case]
-#     except KeyError:
-#         print("test case input (-t --t) wrong see help for more info, INTERNAL ERROR!?")
-#
+# verify interpreter path
+if interpreter_path is None:
+    interpreter_path = Path(__file__).parent.parent.joinpath(CMAKE_DIR).joinpath("cloxpp")
+else:
+    interpreter_path = Path(interpreter_path)
+if not (interpreter_path.exists() and os.access(interpreter_path, os.X_OK)):
+    print(f"{Colors.WARNING}No lox interpreter found at the specified path: '{interpreter_path}'{Colors.ENDC}")
+    exit()
+
+if verbose:
+    print(f"Lox interpreter identified: '{interpreter_path}'")
+    print(80*'-')
+# verify iterations is passed correctly
+if len(args.iterations) > 2:
+    parser.error("Max two arguments can be provided for the number of iterations")
+iterations = (args.iterations, 1) if len(args.iterations) == 1 else args.iterations
+
+
+print(f"Lox interpreter benchmark {strftime('%Y-%m-%d %H:%M:%S', localtime())}")
+print(f"interpreter executable: '{interpreter_path}'")
+print(f"iterations/benchmark: {iterations[0]}")
+print(f"warmup iterations/benchmark: {iterations[1]}")
+
+if test_case != "all":
+    try:
+        benchmark = benchmarks[test_case]
+        run_benchmark(benchmark, iterations[0]+iterations[1])
+
+    except KeyError:
+        print(f"{Colors.WARNING}No benchmark named: '{test_case}', see help (-h) for more info.{Colors.ENDC}")
+        exit()
+
+
+
 # elif test_case == "all":
-#     print("SYMMETRIC TSP TEST " + strftime("%Y-%m-%d %H:%M:%S", localtime()))
+#     print("Lox interpreter benchmark" + strftime("%Y-%m-%d %H:%M:%S", localtime()))
+#     print(f"executable: {}")
 #     for name in j["problem_names"]:
 #         print(20 * "-" + " TESTCASE: " + name + 20 * "-")
 #         try:
@@ -77,7 +163,7 @@ binary_path = args.prog
 #
 #         except subprocess.TimeoutExpired:
 #             print(Colours.WARNING + "TimeoutError runtime longer than" + str(TIME_OUT)+"s" + Colours.ENDC)
-#         # for i in range(N):
-#         #     for j in range(N):
-#         #         assert
-#         # print(result.stdout)
+      # for i in range(N):
+      #     for j in range(N):
+      #         assert
+      # print(result.stdout)
