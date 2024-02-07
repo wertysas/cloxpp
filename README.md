@@ -1,26 +1,38 @@
-# CLoxPP
+# cLoxpp
 A C++ implementation of a Lox compiler & VM & bytecode interpreter based on Bob Nystrom's book Crafting Interpreters:
 * [craftinginterpreters.com](https://craftinginterpreters.com/)
 
 ## Lox Language
 The specification of Lox can be found in [chapter 3](https://craftinginterpreters.com/the-lox-language.html#the-standard-library) of Crafting Interpreters.
 
-**TLDR** Lox is:
+**TL;DR;** Lox is:
 - Dynamically typed (similar to Python) "everything is an object". With 5 built-in data types booleans, numbers (double precision floats), strings, nil
 - Garbage Collected
 - Supports closures
 -  . . .
 
-## Implementation status 
-Currently the VM supports all but one feature of lox:
-- No user defined classes.
+The following snippet shows a recursive function
+to calculate fibonnaci numbers:
+```
+fun fib(n) {
+  if (n < 2) return n;
+  return fib(n - 2) + fib(n - 1);
+}
 
-CloxPP  passes all unit tests from [munificient/craftinginterpreters](https://github.com/munificent/craftinginterpreters#testing)
-(except 2 which it's expected to fail, since it supports larger constant pools for chunks) up to chapter 25.
+print "The 35th fibonnaci number is:";
+print fib(35);
+```
+
+More examples can be found in the [benchmarks](/benchmark/benchmarks) directory.
+
+## Implementation status 
+
+cLoxpp supports all language features of Lox and passes all unit tests from [munificient/craftinginterpreters](https://github.com/munificent/craftinginterpreters#testing)
+(except 2 which it's expected to fail, since it supports larger constant pools for chunks than the interpreter from craftingerpreters).
 **Note** that the unit tests requires an older version of the Dart SDK to run.
 
 ## Installation
-Cloxpp uses CMake as it's build system. The target to build is cloxpp from the top level
+cLoxpp uses CMake as it's build system. The target to build is cloxpp from the top level
 [CMakeLists.txt](CMakeLists.txt)
 
 ## Usage
@@ -32,3 +44,6 @@ Alternatively a lox script can be executed by the command:
 ```
 ./cloxpp [script name]
 ```
+
+### Benchmarking Scripts
+

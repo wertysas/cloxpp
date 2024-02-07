@@ -66,4 +66,6 @@ for (var i = 0; i < n; i = i + 1) {
 }
 
 print ntoggle.value();
-print clock() - start;
+var elapsed = clock() - start;
+print "elapsed";
+print elapsed;
