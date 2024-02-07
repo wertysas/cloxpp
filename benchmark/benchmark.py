@@ -61,7 +61,6 @@ def parse_benchmark_output(output_string):
 
 def run_benchmark(benchmark, iterations, warmup=1, quiet=False):
     timings = []
-    print(80*"-")
     for i in range(1 - warmup, iterations + 1):
         if not quiet:
             sys.stdout.write(f"\rbenchmark: {benchmark.name:<30}{Colors.WARNING}iteration [{i}/{iterations}]{Colors.ENDC}")
@@ -185,6 +184,8 @@ print(info_string)
 csv_output = 80*"-" + "\n"
 for bm in bms:
     benchmark = benchmarks[bm]
+    if not quiet:
+        print(80*"-")
     timings = run_benchmark(benchmark, iterations, quiet=quiet)
     #  stats from timings
     timing_string = ','.join(map(str, timings))
