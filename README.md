@@ -1,6 +1,10 @@
 # cLoxpp
-A C++ implementation of a Lox compiler & VM & bytecode interpreter based on Bob Nystrom's book Crafting Interpreters:
-* [craftinginterpreters.com](https://craftinginterpreters.com/)
+A C++ implementation of a Lox compiler & VM & bytecode interpreter based on Bob Nystrom's book Crafting Interpreters ([craftinginterpreters.com](https://craftinginterpreters.com/))
+with further optimizations and extensions including:
+
+* Extended bytecode, which yields increased performance and adds support for compiling more constants.
+* Custom Memory Manager with custom allocator support.
+
 
 ## Lox Language
 The specification of Lox can be found in [chapter 3](https://craftinginterpreters.com/the-lox-language.html#the-standard-library) of Crafting Interpreters.
