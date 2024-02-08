@@ -27,13 +27,65 @@ More examples can be found in the [benchmarks](/benchmark/benchmarks) directory.
 
 ## Implementation status 
 
-cLoxpp supports all language features of Lox and passes all unit tests from [munificient/craftinginterpreters](https://github.com/munificent/craftinginterpreters#testing)
+**cLoxpp supports is fully functioning and all language featuresof Lox**
+
+cloxpp passes all unit tests from [munificient/craftinginterpreters](https://github.com/munificent/craftinginterpreters#testing)
 (except 2 which it's expected to fail, since it supports larger constant pools for chunks than the interpreter from craftingerpreters).
-**Note** that the unit tests requires an older version of the Dart SDK to run.
+**Note that the unit tests requires an older (dart 2.X) than the default version of the Dart SDK to run**.
+
+| OS | Tests Passed* |
+| --- |---------------|
+| Mac OS | 244/244       |
+| Linux | 244/244       |
+| Windows | Not tested    |
+
+*There are 246 unit tests in the dart test suite but two of them tests
+for correct error messages when chunks are too large, which is chunks with
+more than 256 elements. However, cloxpp supports *long* chunks
+with up to 2^24=16,777,216 elements, thus it "fails" two tests,
+which is expected and not included in the table.
 
 ## Installation
 cLoxpp uses CMake as it's build system. The target to build is cloxpp from the top level
-[CMakeLists.txt](CMakeLists.txt)
+[CMakeLists.txt](CMakeLists.txt). Example commands to build cloxpp
+for Mac OS, Linux, and Windows are given below.
+
+### Building on Linux and Mac OS
+
+If you want to build the cloxpp on linux the easiest way is to
+navigate to the cloxpp directory and execute the command
+```
+cmake -DCMAKE_BUILD_TYPE=Release -S . -B cmake-build-release
+```
+followed by the command
+```
+cmake --build cmake-build-release --target cloxpp
+```
+The cloxpp executable is then found at ``cmake-build-release/cloxpp``
+
+
+**Alternatively, it's possible to build cloxpp from outside the source directory**
+by using the same cmake commands as above, but in addition also specifying the paths
+to the build directory
+```
+cmake -DCMAKE_BUILD_TYPE=Release -S /path/to/cloxpp/source/directory -B /path/to/build/directory
+```
+followed by the command
+```
+cmake --build /path/to/build/directory --target cloxpp
+```
+
+
+### Building on Windows
+On windows the program can be built using the command
+```
+cmake -S /path/to/source/directory/ -B /path/to/build/directory
+```
+followed by
+```
+cmake --build /path/to/build-dir --config Release --target cloxpp
+```
+
 
 ## Usage
 The VM can be run as an interpreter in a shell by the command
