@@ -27,7 +27,7 @@ More examples can be found in the [benchmarks](/benchmark/benchmarks) directory.
 
 ## Implementation status 
 
-**cLoxpp supports is fully functioning and all language featuresof Lox**
+**cLoxpp is fully functioning and all language features of Lox are supported**
 
 cloxpp passes all unit tests from [munificient/craftinginterpreters](https://github.com/munificent/craftinginterpreters#testing)
 (except 2 which it's expected to fail, since it supports larger constant pools for chunks than the interpreter from craftingerpreters).
