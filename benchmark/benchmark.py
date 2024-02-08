@@ -192,10 +192,8 @@ for bm in bms:
     csv_output += f"{bm},{timing_string}\n"
     if not quiet:
         print_benchmark_stats(timings)
-    if verbose:
-        timing_string = ','.join(map(str, timings))
-        print(timing_string)
-print(csv_output)
+if verbose:
+    print(csv_output)
 
 if output is not None:
     with open(output, 'w+') as f:
